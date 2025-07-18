@@ -176,10 +176,17 @@ def main():
         # Analysis options
         st.subheader("📊 Analysis Options")
         
-        include_visualizations = st.checkbox("Include Visualizations", value=True)
-        enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
-        include_export = st.checkbox("Include Export Options", value=True)
-        batch_mode = st.checkbox("Batch Processing Mode", value=False)
+        batch_mode = st.checkbox("Batch Processing Mode", value=False, help="Enable for multiple files - shows combined analysis and exports only")
+        
+        if batch_mode:
+            st.info("🔄 **Batch Mode**: Individual visualizations disabled. Focus on combined analysis and exports.")
+            include_visualizations = False
+            enhanced_wcs_viz = False
+            include_export = True
+        else:
+            include_visualizations = st.checkbox("Include Visualizations", value=True)
+            enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
+            include_export = st.checkbox("Include Export Options", value=True)
     
     # Main content area
     if selected_files:
@@ -220,6 +227,11 @@ def main():
                 
                 display_wcs_results(result, result['metadata'], include_visualizations, enhanced_wcs_viz)
         
+        # Batch mode summary
+        if batch_mode and all_results:
+            st.markdown("### 📊 Batch Processing Summary")
+            display_batch_summary(all_results)
+        
         # Batch processing features
         if all_results:
             # Export functionality
@@ -247,8 +259,11 @@ def main():
                             )
             
             # Combined visualizations for multiple files
-            if len(all_results) > 1:
-                st.markdown("### 📊 Combined Analysis Visualizations")
+            if len(all_results) > 1 and (batch_mode or include_visualizations):
+                if batch_mode:
+                    st.markdown("### 📊 Combined Analysis Visualizations")
+                else:
+                    st.markdown("### 📊 Multi-File Comparison Visualizations")
                 
                 # Create combined visualizations
                 combined_viz = create_combined_visualizations(all_results)
@@ -275,10 +290,7 @@ def main():
                         st.markdown("#### 👤 Individual Player Analysis")
                         st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
                 
-                # Batch processing summary table
-                if batch_mode:
-                    st.markdown("### 📊 Batch Processing Summary")
-                    display_batch_summary(all_results)
+                # Batch processing summary table (already shown above in batch mode)
     
     else:
         # Welcome message
@@ -500,6 +512,9 @@ def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], inclu
         # Display kinematic visualizations as well
         st.markdown("### 📈 Kinematic Analysis Visualizations")
         
+        # Import visualization function
+        from visualization import create_kinematic_visualization
+        
         # Create kinematic visualization
         kinematic_fig = create_kinematic_visualization(
             results['processed_data'], 
@@ -536,7 +551,7 @@ def display_batch_summary(all_results: list):
     summary_data = []
     for result in all_results:
         metadata = result['metadata']
-        velocity_stats = result['results'].get('velocity_stats', {})
+        velocity_stats = result.get('velocity_stats', {})
         
         summary_data.append({
             'File': result['file_name'],
