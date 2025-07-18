@@ -1,0 +1,106 @@
+# WCS Analysis Platform Configuration
+
+# Application settings
+app:
+  title: "WCS Analysis Platform"
+  port: 8501
+  debug: false
+  theme:
+    primary_color: "#1f77b4"
+    background_color: "#ffffff"
+    secondary_background_color: "#f0f2f6"
+
+# Processing settings
+processing:
+  sampling_rate: 10  # Hz - fixed for all files
+  max_file_size: 100  # MB
+  supported_formats: ["csv"]
+  default_time_column: "Seconds"
+  default_velocity_column: "Velocity"
+
+# Analysis settings
+analysis:
+  default_epoch_duration: 1.0  # minutes
+  default_epoch_durations: [0.5, 1.0, 1.5, 2.0, 3.0, 5.0]
+  default_thresholds:
+    th0_min: 0.0
+    th0_max: 100.0
+    th1_min: 5.0
+    th1_max: 100.0
+  
+  # WCS algorithm parameters
+  wcs:
+    min_window_size: 10  # minimum samples for WCS calculation
+    max_window_size: 3000  # maximum samples (5 minutes at 10Hz)
+    overlap_factor: 0.5  # window overlap for sliding analysis
+
+# File format detection
+formats:
+  statsport:
+    confidence_threshold: 0.8
+    required_columns: ["Player Id", "Player Display Name"]
+    velocity_column_variations: ["  Speed m/s", " Speed m/s", "Speed m/s", "Speed"]
+    
+  catapult:
+    confidence_threshold: 0.8
+    metadata_lines: 8
+    required_headers: ["Timestamp", "Velocity"]
+    
+  generic_gps:
+    confidence_threshold: 0.6
+    velocity_column_variations: ["Velocity", "Speed", "Speed m/s"]
+
+# Visualization settings
+visualization:
+  default_height: 600
+  default_width: 800
+  color_scheme:
+    primary: "#1f77b4"
+    secondary: "#ff7f0e"
+    success: "#2ca02c"
+    warning: "#d62728"
+    info: "#9467bd"
+  
+  charts:
+    velocity_time_series:
+      line_color: "#1f77b4"
+      line_width: 1
+      opacity: 0.8
+    
+    velocity_distribution:
+      bar_color: "#lightblue"
+      opacity: 0.7
+      bins: 50
+    
+    wcs_periods:
+      th0_color: "#lightcoral"
+      th1_color: "#lightblue"
+      opacity: 0.3
+
+# Export settings
+export:
+  supported_formats: ["csv", "json", "xlsx"]
+  default_format: "csv"
+  include_metadata: true
+  include_visualizations: true
+  
+  # Report settings
+  reports:
+    include_summary: true
+    include_charts: true
+    include_raw_data: false
+    filename_template: "wcs_analysis_{player}_{date}_{time}"
+
+# Error handling
+error_handling:
+  max_retries: 3
+  timeout_seconds: 30
+  log_level: "INFO"
+  show_detailed_errors: false
+
+# Performance settings
+performance:
+  max_memory_usage: 1024  # MB
+  chunk_size: 10000  # rows per chunk for large files
+  cache_results: true
+  cache_ttl: 3600  # seconds 
