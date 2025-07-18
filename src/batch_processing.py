@@ -412,17 +412,18 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
         from plotly.subplots import make_subplots
         import plotly.graph_objects as go
         
-        # Limit to first 5 players for readability
-        max_players = min(5, len(all_results))
+        # Limit to first 3 players for better readability and prevent overlapping
+        max_players = min(3, len(all_results))
         selected_results = all_results[:max_players]
         
-        # Create subplots
+        # Create subplots with better spacing
         fig = make_subplots(
             rows=max_players, cols=2,
             subplot_titles=[f"{result['metadata'].get('player_name', 'Unknown')} - Velocity Profile" for result in selected_results] +
                           [f"{result['metadata'].get('player_name', 'Unknown')} - Epoch Comparison" for result in selected_results],
-            vertical_spacing=0.1,
-            horizontal_spacing=0.1
+            vertical_spacing=0.15,  # Increased spacing
+            horizontal_spacing=0.15,  # Increased spacing
+            specs=[[{"secondary_y": False}, {"secondary_y": False}] for _ in range(max_players)]
         )
         
         for i, result in enumerate(selected_results):
@@ -434,10 +435,14 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                 df = result['processed_data']
                 time_data = df['Seconds'] if 'Seconds' in df.columns else np.arange(len(df)) / 10
                 
+                # Limit time range for better visibility (first 10 minutes)
+                max_time = min(600, time_data.max())  # 10 minutes = 600 seconds
+                mask = time_data <= max_time
+                
                 fig.add_trace(
                     go.Scatter(
-                        x=time_data,
-                        y=df['Velocity'],
+                        x=time_data[mask],
+                        y=df['Velocity'][mask],
                         mode='lines',
                         name=f'{player_name} - Velocity',
                         line=dict(color='#2E86AB', width=1),
@@ -446,7 +451,7 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                     row=row, col=1
                 )
                 
-                # Add WCS period highlights
+                # Add WCS period highlights (only if within time range)
                 wcs_results = result.get('wcs_results', [])
                 epoch_durations = result.get('epoch_durations', [])
                 colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
@@ -457,14 +462,16 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                         th0_end = epoch_result[3] / 10
                         th0_distance = epoch_result[0]
                         
-                        fig.add_vrect(
-                            x0=th0_start, x1=th0_end,
-                            fillcolor=colors[j % len(colors)],
-                            opacity=0.3,
-                            layer="below",
-                            line_width=0,
-                            row=row, col=1
-                        )
+                        # Only show highlights if they're within the displayed time range
+                        if th0_start <= max_time:
+                            fig.add_vrect(
+                                x0=th0_start, x1=min(th0_end, max_time),
+                                fillcolor=colors[j % len(colors)],
+                                opacity=0.3,
+                                layer="below",
+                                line_width=0,
+                                row=row, col=1
+                            )
             
             # Epoch comparison (right column)
             wcs_results = result.get('wcs_results', [])
@@ -487,10 +494,16 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                 )
         
         fig.update_layout(
-            title="Individual Player Analysis",
-            height=200 * max_players,
-            showlegend=False
+            title="Individual Player Analysis (Top 3 Players)",
+            height=300 * max_players,  # Increased height per player
+            showlegend=False,
+            margin=dict(l=50, r=50, t=80, b=50),  # Better margins
+            font=dict(size=10)  # Smaller font for better fit
         )
+        
+        # Update subplot titles to be more compact
+        for i in range(len(fig.layout.annotations)):
+            fig.layout.annotations[i].font.size = 11
         
         return fig
         

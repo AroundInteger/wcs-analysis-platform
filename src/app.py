@@ -287,8 +287,9 @@ def main():
                         st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
                     
                     if 'individual_player_grid' in combined_viz:
-                        st.markdown("#### 👤 Individual Player Analysis")
-                        st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
+                        with st.expander("👤 Individual Player Analysis (Click to expand)", expanded=False):
+                            st.info("📊 **Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
+                            st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
                 
                 # Batch processing summary table (already shown above in batch mode)
     
