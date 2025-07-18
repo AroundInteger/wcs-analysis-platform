@@ -72,7 +72,7 @@ def add_wcs_annotations(fig, wcs_results, colors, annotation_positions):
                 opacity=0.3,
                 layer="below",
                 line_width=0,
-                annotation_text=f"TH_1: {th1_distance:.1f}m",
+                annotation_text=f"Threshold 1: {th1_distance:.1f}m",
                 annotation_position=th1_pos,
                 annotation=dict(
                     font=dict(size=10, color="white"),
@@ -196,6 +196,8 @@ def create_kinematic_visualization(df: pd.DataFrame,
                 )
             
             current_row += 1
+        
+
         
         # Distance plot
         if has_distance:
@@ -390,6 +392,246 @@ def create_velocity_visualization(df: pd.DataFrame,
     except Exception as e:
         st.error(f"Error creating velocity visualization: {str(e)}")
         return None
+
+
+def create_dual_wcs_velocity_visualization(df: pd.DataFrame, 
+                                         metadata: Dict[str, Any],
+                                         rolling_wcs_results: Optional[List] = None,
+                                         contiguous_wcs_results: Optional[List] = None) -> go.Figure:
+    """
+    Create velocity visualization with both rolling and contiguous WCS periods shown as scaled curves
+    
+    Args:
+        df: DataFrame with velocity data
+        metadata: File metadata
+        rolling_wcs_results: Rolling WCS analysis results
+        contiguous_wcs_results: Contiguous WCS analysis results
+        
+    Returns:
+        Plotly figure object
+    """
+    try:
+        # Create figure
+        fig = go.Figure()
+        
+        # Time data
+        if 'Seconds' in df.columns:
+            time_data = df['Seconds']
+        else:
+            time_data = np.arange(len(df)) / 10  # Assume 10Hz
+        
+        # Main velocity plot
+        fig.add_trace(
+            go.Scatter(
+                x=time_data,
+                y=df['Velocity'],
+                mode='lines',
+                name='Velocity',
+                line=dict(color='#2E86AB', width=1),  # Reduced width for better layering
+                hovertemplate='<b>Time:</b> %{x:.1f}s<br><b>Velocity:</b> %{y:.2f} m/s<extra></extra>',
+                fill='tonexty',
+                fillcolor='rgba(46, 134, 171, 0.05)'  # Reduced opacity
+            )
+        )
+        
+        # Add rolling WCS periods as scaled curves
+        if rolling_wcs_results:
+            fig = add_rolling_wcs_curves(fig, rolling_wcs_results, time_data, df['Velocity'])
+        
+        # Add contiguous WCS periods as scaled curves
+        if contiguous_wcs_results:
+            fig = add_contiguous_wcs_curves(fig, contiguous_wcs_results, time_data, df['Velocity'])
+        
+        # Update layout
+        fig.update_layout(
+            title=f"Velocity with Dual WCS Analysis - {metadata.get('player_name', 'Unknown')}",
+            xaxis_title="Time (seconds)",
+            yaxis_title="Velocity (m/s)",
+            height=600,
+            showlegend=True,
+            legend=dict(
+                x=1.02,
+                y=1.0,
+                xanchor='left',
+                yanchor='top',
+                bgcolor='rgba(0,0,0,0.8)',
+                bordercolor='rgba(255,255,255,0.3)',
+                borderwidth=1,
+                font=dict(color='white', size=10)
+            ),
+            hovermode='x unified',
+            margin=dict(l=80, r=120, t=80, b=80),
+            title_x=0.5,
+            title_font_size=16,
+            font=dict(size=12)
+        )
+        
+        # Update axes
+        fig.update_xaxes(
+            title_font_size=12,
+            tickfont_size=10
+        )
+        fig.update_yaxes(
+            title_font_size=12,
+            tickfont_size=10,
+            range=[0, 10]  # Keep y-axis maximum at 10 m/s for velocity data
+        )
+        
+        return fig
+        
+    except Exception as e:
+        st.error(f"Error creating dual WCS velocity visualization: {str(e)}")
+        return None
+
+
+def add_rolling_wcs_curves(fig, rolling_wcs_results, time_data, velocity_data):
+    """
+    Add rolling WCS periods as scaled curves on the velocity plot
+    
+    Args:
+        fig: Plotly figure object
+        rolling_wcs_results: Rolling WCS results
+        time_data: Time data array
+        velocity_data: Velocity data array
+        
+    Returns:
+        Updated figure with rolling WCS curves
+    """
+    colors = {
+        'th0': '#FF6B6B',  # Red for Default threshold
+        'th1': '#4ECDC4'   # Teal for Threshold 1
+    }
+    
+    # Get velocity range for scaling - use fixed 0-10 range for consistent scaling
+    vel_max = 10.0  # Fixed maximum for y-axis
+    vel_min = 0.0   # Fixed minimum for y-axis
+    vel_range = vel_max - vel_min
+    
+    for i, epoch_result in enumerate(rolling_wcs_results):
+        if len(epoch_result) >= 8:
+            # Default threshold period
+            th0_start = epoch_result[2] / 10  # Convert to seconds
+            th0_end = epoch_result[3] / 10
+            th0_distance = epoch_result[0]
+            
+            # Create scaled curve for Default threshold
+            # Scale the distance to fit within 0-10 range
+            # Position at 7-9 m/s range for good visibility
+            scaled_height = 7.0 + (th0_distance / 1000) * 2.0  # Scale to fit in 7-9 range
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=[th0_start, th0_end],
+                    y=[scaled_height, scaled_height],
+                    mode='lines+markers',
+                    name=f'Rolling Default ({th0_distance:.1f}m)',
+                    line=dict(color=colors['th0'], width=6, dash='solid'),  # Increased width
+                    marker=dict(size=10, color=colors['th0']),  # Increased size
+                    hovertemplate=f'<b>Rolling Default Threshold</b><br>Distance: {th0_distance:.1f}m<br>Time: {th0_start:.1f}s - {th0_end:.1f}s<extra></extra>',
+                    showlegend=True,
+                    legendgroup='rolling_th0'
+                )
+            )
+            
+            # Threshold 1 period
+            th1_start = epoch_result[6] / 10
+            th1_end = epoch_result[7] / 10
+            th1_distance = epoch_result[4]
+            
+            # Create scaled curve for Threshold 1
+            # Position at 5-7 m/s range for good visibility
+            scaled_height_th1 = 5.0 + (th1_distance / 1000) * 2.0  # Scale to fit in 5-7 range
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=[th1_start, th1_end],
+                    y=[scaled_height_th1, scaled_height_th1],
+                    mode='lines+markers',
+                    name=f'Rolling Threshold 1 ({th1_distance:.1f}m)',
+                    line=dict(color=colors['th1'], width=6, dash='solid'),  # Increased width
+                    marker=dict(size=10, color=colors['th1']),  # Increased size
+                    hovertemplate=f'<b>Rolling Threshold 1</b><br>Distance: {th1_distance:.1f}m<br>Time: {th1_start:.1f}s - {th1_end:.1f}s<extra></extra>',
+                    showlegend=True,
+                    legendgroup='rolling_th1'
+                )
+            )
+    
+    return fig
+
+
+def add_contiguous_wcs_curves(fig, contiguous_wcs_results, time_data, velocity_data):
+    """
+    Add contiguous WCS periods as scaled curves on the velocity plot
+    
+    Args:
+        fig: Plotly figure object
+        contiguous_wcs_results: Contiguous WCS results
+        time_data: Time data array
+        velocity_data: Velocity data array
+        
+    Returns:
+        Updated figure with contiguous WCS curves
+    """
+    colors = {
+        'th0': '#FF8E8E',  # Lighter red for Default threshold
+        'th1': '#6EDDD6'   # Lighter teal for Threshold 1
+    }
+    
+    # Get velocity range for scaling - use fixed 0-10 range for consistent scaling
+    vel_max = 10.0  # Fixed maximum for y-axis
+    vel_min = 0.0   # Fixed minimum for y-axis
+    vel_range = vel_max - vel_min
+    
+    for i, epoch_result in enumerate(contiguous_wcs_results):
+        if len(epoch_result) >= 8:
+            # Default threshold period
+            th0_start = epoch_result[2] / 10  # Convert to seconds
+            th0_end = epoch_result[3] / 10
+            th0_distance = epoch_result[0]
+            
+            # Create scaled curve for Default threshold
+            # Scale the distance to fit within 0-10 range
+            # Position at 7-9 m/s range for good visibility
+            scaled_height = 7.0 + (th0_distance / 1000) * 2.0  # Scale to fit in 7-9 range
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=[th0_start, th0_end],
+                    y=[scaled_height, scaled_height],
+                    mode='lines+markers',
+                    name=f'Contiguous Default ({th0_distance:.1f}m)',
+                    line=dict(color=colors['th0'], width=6, dash='dot'),  # Increased width
+                    marker=dict(size=10, color=colors['th0'], symbol='diamond'),  # Increased size
+                    hovertemplate=f'<b>Contiguous Default Threshold</b><br>Distance: {th0_distance:.1f}m<br>Time: {th0_start:.1f}s - {th0_end:.1f}s<extra></extra>',
+                    showlegend=True,
+                    legendgroup='contiguous_th0'
+                )
+            )
+            
+            # Threshold 1 period
+            th1_start = epoch_result[6] / 10
+            th1_end = epoch_result[7] / 10
+            th1_distance = epoch_result[4]
+            
+            # Create scaled curve for Threshold 1
+            # Position at 5-7 m/s range for good visibility
+            scaled_height_th1 = 5.0 + (th1_distance / 1000) * 2.0  # Scale to fit in 5-7 range
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=[th1_start, th1_end],
+                    y=[scaled_height_th1, scaled_height_th1],
+                    mode='lines+markers',
+                    name=f'Contiguous Threshold 1 ({th1_distance:.1f}m)',
+                    line=dict(color=colors['th1'], width=6, dash='dot'),  # Increased width
+                    marker=dict(size=10, color=colors['th1'], symbol='diamond'),  # Increased size
+                    hovertemplate=f'<b>Contiguous Threshold 1</b><br>Distance: {th1_distance:.1f}m<br>Time: {th1_start:.1f}s - {th1_end:.1f}s<extra></extra>',
+                    showlegend=True,
+                    legendgroup='contiguous_th1'
+                )
+            )
+    
+    return fig
 
 
 def create_wcs_comparison_chart(wcs_results: List[List], 
@@ -592,7 +834,7 @@ def create_batch_comparison_chart(batch_results: List[Dict[str, Any]]) -> go.Fig
         # Create subplots
         fig = make_subplots(
             rows=2, cols=2,
-            subplot_titles=('Mean Velocity', 'Peak Velocity', 'Default Threshold Distance', 'TH_1 Distance'),
+            subplot_titles=('Mean Velocity', 'Peak Velocity', 'Default Threshold Distance', 'Threshold 1 Distance'),
             vertical_spacing=0.1
         )
         
@@ -614,9 +856,9 @@ def create_batch_comparison_chart(batch_results: List[Dict[str, Any]]) -> go.Fig
             row=2, col=1
         )
         
-        # TH_1 distance
+        # Threshold 1 distance
         fig.add_trace(
-            go.Bar(x=player_names, y=th1_distances, name='TH_1 Distance', marker_color='lightgreen'),
+            go.Bar(x=player_names, y=th1_distances, name='Threshold 1 Distance', marker_color='lightgreen'),
             row=2, col=2
         )
         
@@ -639,7 +881,8 @@ def create_batch_comparison_chart(batch_results: List[Dict[str, Any]]) -> go.Fig
 
 def create_enhanced_wcs_visualization(df: pd.DataFrame, 
                                     metadata: Dict[str, Any],
-                                    wcs_results: Optional[List] = None) -> go.Figure:
+                                    wcs_results: Optional[List] = None,
+                                    wcs_method: str = 'rolling') -> go.Figure:
     """
     Create enhanced WCS visualization with sophisticated period highlighting
     
@@ -647,6 +890,7 @@ def create_enhanced_wcs_visualization(df: pd.DataFrame,
         df: DataFrame with velocity data
         metadata: File metadata
         wcs_results: Optional WCS analysis results
+        wcs_method: WCS analysis method ('rolling' or 'contiguous')
         
     Returns:
         Plotly figure object
@@ -699,8 +943,9 @@ def create_enhanced_wcs_visualization(df: pd.DataFrame,
 
         
         # Update layout with better spacing
+        method_display = wcs_method.title()
         fig.update_layout(
-            title=f"Enhanced WCS Analysis - {metadata.get('player_name', 'Unknown')}",
+            title=f"Enhanced WCS Analysis ({method_display} Method) - {metadata.get('player_name', 'Unknown')}",
             height=900,  # Increased height to accommodate better spacing
             showlegend=True,  # Re-enable legend for colored markers
             legend=dict(
@@ -1028,13 +1273,14 @@ def create_performance_intensity(fig, df, wcs_results, row=3):
     return fig
 
 
-def create_wcs_period_details(wcs_results: List[List], epoch_durations: Optional[List[float]] = None) -> pd.DataFrame:
+def create_wcs_period_details(wcs_results: List[List], epoch_durations: Optional[List[float]] = None, wcs_method: str = 'rolling') -> pd.DataFrame:
     """
     Create detailed WCS period information table
     
     Args:
         wcs_results: List of WCS results
         epoch_durations: List of epoch durations in minutes
+        wcs_method: WCS analysis method ('rolling' or 'contiguous')
         
     Returns:
         DataFrame with detailed period information
@@ -1062,6 +1308,7 @@ def create_wcs_period_details(wcs_results: List[List], epoch_durations: Optional
                 period_data.append({
                     'Epoch': epoch_name,
                     'Period': 'Default Threshold',
+                    'Method': wcs_method.title(),
                     'Distance (m)': f"{th0_distance:.1f}",
                     'Duration (s)': f"{th0_duration:.1f}",
                     'Start Time (s)': f"{th0_start:.1f}",
@@ -1080,6 +1327,7 @@ def create_wcs_period_details(wcs_results: List[List], epoch_durations: Optional
                 period_data.append({
                     'Epoch': epoch_name,
                     'Period': 'Threshold 1',
+                    'Method': wcs_method.title(),
                     'Distance (m)': f"{th1_distance:.1f}",
                     'Duration (s)': f"{th1_duration:.1f}",
                     'Start Time (s)': f"{th1_start:.1f}",
@@ -1111,7 +1359,7 @@ def create_summary_statistics_table(velocity_stats: Dict[str, Any],
     Args:
         velocity_stats: Velocity statistics dictionary
         kinematic_stats: Optional kinematic statistics dictionary
-        wcs_summary: Optional WCS analysis summary
+        wcs_summary: Optional WCS analysis summary (now includes both rolling and contiguous)
         
     Returns:
         DataFrame formatted for display
@@ -1152,13 +1400,30 @@ def create_summary_statistics_table(velocity_stats: Dict[str, Any],
                     'Category': 'Kinematics'
                 })
                 summary_data.append({
-                    'Metric': 'Min Acceleration',
-                    'Value': f"{kinematic_stats.get('min_acceleration', 0):.2f} m/s²",
+                    'Metric': 'Mean Acceleration (Events Only)',
+                    'Value': f"{kinematic_stats.get('mean_acceleration', 0):.2f} m/s²",
                     'Category': 'Kinematics'
                 })
                 summary_data.append({
-                    'Metric': 'Mean Acceleration',
-                    'Value': f"{kinematic_stats.get('mean_acceleration', 0):.2f} m/s²",
+                    'Metric': 'Acceleration Events',
+                    'Value': f"{kinematic_stats.get('acceleration_events', 0)}",
+                    'Category': 'Kinematics'
+                })
+            
+            if 'max_deceleration' in kinematic_stats:
+                summary_data.append({
+                    'Metric': 'Max Deceleration',
+                    'Value': f"{kinematic_stats.get('max_deceleration', 0):.2f} m/s²",
+                    'Category': 'Kinematics'
+                })
+                summary_data.append({
+                    'Metric': 'Mean Deceleration (Events Only)',
+                    'Value': f"{kinematic_stats.get('mean_deceleration', 0):.2f} m/s²",
+                    'Category': 'Kinematics'
+                })
+                summary_data.append({
+                    'Metric': 'Deceleration Events',
+                    'Value': f"{kinematic_stats.get('deceleration_events', 0)}",
                     'Category': 'Kinematics'
                 })
             
@@ -1181,9 +1446,60 @@ def create_summary_statistics_table(velocity_stats: Dict[str, Any],
                     'Category': 'Kinematics'
                 })
         
-        # WCS statistics
+        # WCS statistics - now handle both rolling and contiguous
         if wcs_summary:
-            if 'th0_distance' in wcs_summary:
+            # Rolling WCS statistics
+            if 'rolling_th0_distance' in wcs_summary:
+                summary_data.append({
+                    'Metric': 'Rolling Default Distance',
+                    'Value': f"{wcs_summary.get('rolling_th0_distance', 0):.1f} m",
+                    'Category': 'WCS Analysis (Rolling)'
+                })
+                summary_data.append({
+                    'Metric': 'Rolling Default Duration',
+                    'Value': f"{wcs_summary.get('rolling_th0_duration', 0):.1f} s",
+                    'Category': 'WCS Analysis (Rolling)'
+                })
+            
+            if 'rolling_th1_distance' in wcs_summary:
+                summary_data.append({
+                    'Metric': 'Rolling Threshold 1 Distance',
+                    'Value': f"{wcs_summary.get('rolling_th1_distance', 0):.1f} m",
+                    'Category': 'WCS Analysis (Rolling)'
+                })
+                summary_data.append({
+                    'Metric': 'Rolling Threshold 1 Duration',
+                    'Value': f"{wcs_summary.get('rolling_th1_duration', 0):.1f} s",
+                    'Category': 'WCS Analysis (Rolling)'
+                })
+            
+            # Contiguous WCS statistics
+            if 'contiguous_th0_distance' in wcs_summary:
+                summary_data.append({
+                    'Metric': 'Contiguous Default Distance',
+                    'Value': f"{wcs_summary.get('contiguous_th0_distance', 0):.1f} m",
+                    'Category': 'WCS Analysis (Contiguous)'
+                })
+                summary_data.append({
+                    'Metric': 'Contiguous Default Duration',
+                    'Value': f"{wcs_summary.get('contiguous_th0_duration', 0):.1f} s",
+                    'Category': 'WCS Analysis (Contiguous)'
+                })
+            
+            if 'contiguous_th1_distance' in wcs_summary:
+                summary_data.append({
+                    'Metric': 'Contiguous Threshold 1 Distance',
+                    'Value': f"{wcs_summary.get('contiguous_th1_distance', 0):.1f} m",
+                    'Category': 'WCS Analysis (Contiguous)'
+                })
+                summary_data.append({
+                    'Metric': 'Contiguous Threshold 1 Duration',
+                    'Value': f"{wcs_summary.get('contiguous_th1_duration', 0):.1f} s",
+                    'Category': 'WCS Analysis (Contiguous)'
+                })
+            
+            # Legacy support for old format
+            if 'th0_distance' in wcs_summary and 'rolling_th0_distance' not in wcs_summary:
                 summary_data.append({
                     'Metric': 'Default Threshold Distance',
                     'Value': f"{wcs_summary.get('th0_distance', 0):.1f} m",
@@ -1195,7 +1511,7 @@ def create_summary_statistics_table(velocity_stats: Dict[str, Any],
                     'Category': 'WCS Analysis'
                 })
             
-            if 'th1_distance' in wcs_summary:
+            if 'th1_distance' in wcs_summary and 'rolling_th1_distance' not in wcs_summary:
                 summary_data.append({
                     'Metric': 'Threshold 1 Distance',
                     'Value': f"{wcs_summary.get('th1_distance', 0):.1f} m",
@@ -1211,7 +1527,7 @@ def create_summary_statistics_table(velocity_stats: Dict[str, Any],
         df = pd.DataFrame(summary_data)
         
         # Sort by category and metric
-        category_order = ['Velocity', 'Kinematics', 'WCS Analysis']
+        category_order = ['Velocity', 'Kinematics', 'WCS Analysis (Rolling)', 'WCS Analysis (Contiguous)', 'WCS Analysis']
         df['Category'] = pd.Categorical(df['Category'], categories=category_order, ordered=True)
         df = df.sort_values(['Category', 'Metric'])
         

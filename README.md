@@ -1,382 +1,262 @@
 # 🔥 WCS Analysis Platform
 
-A professional Streamlit application for Worst Case Scenario (WCS) analysis of GPS data with MATLAB-equivalent algorithms and support for multiple file formats.
+A professional **Worst Case Scenario (WCS) Analysis Platform** for GPS data processing, designed for sports performance analysis. This Streamlit application provides comprehensive analysis of GPS velocity data with support for multiple file formats and advanced visualization capabilities.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](tests/)
+## ✨ Key Features
 
-## 🎯 Overview
+### 📊 **Dual WCS Analysis**
+- **Rolling Window Analysis**: Sliding window approach for continuous performance assessment with **corrected thresholding implementation**
+- **Contiguous Period Analysis**: Best continuous period identification within specified durations
+- **Scaled Curve Visualization**: Both WCS methods displayed as scaled curves on velocity plots with **improved visibility and positioning**
+- **Comprehensive Comparison**: Side-by-side analysis of both methods for complete performance insight
 
-The WCS Analysis Platform is designed for sports performance analysts, coaches, and researchers who need to identify maximum intensity periods in GPS data. It provides MATLAB-equivalent worst case scenario analysis with an intuitive web interface.
+### 🎯 **Advanced Analysis Capabilities**
+- **Multi-Epoch Analysis**: Support for multiple epoch durations (0.5, 1.0, 1.5, 2.0, 3.0, 5.0 minutes)
+- **Dual Threshold System**: 
+  - **Default Threshold**: 0.0-100.0 m/s (all velocities)
+  - **Threshold 1**: Customizable range (default: 5.0-100.0 m/s)
+- **Enhanced Kinematic Parameters**: Acceleration, distance, power (based on abs(acceleration)), and jerk calculations
+- **Deceleration Analysis**: Separate deceleration metrics and event counting
+- **Performance Intensity Mapping**: Visual representation of performance levels
 
-**✅ Current Status**: Fully functional with comprehensive kinematic analysis, enhanced visualizations, robust file processing, and production-ready features. All major bugs have been resolved and the application is ready for professional use.
+### 📁 **Multi-Format Support**
+- **StatSport**: Native support with automatic metadata extraction
+- **Catapult**: Robust parsing with metadata handling
+- **Generic GPS**: Flexible format with customizable column mapping
+- **Batch Processing**: Multiple file upload and folder selection
+
+### 📈 **Enhanced Visualizations**
+- **Dual WCS Velocity Plot**: Shows both rolling and contiguous WCS periods as scaled curves with **improved layering and visibility**
+- **Enhanced WCS Analysis**: Multi-panel visualization with timeline and intensity mapping
+- **Streamlined Kinematic Analysis**: Multi-panel charts for velocity, acceleration, distance, and power (removed redundant deceleration plot)
+- **Performance Metrics Dashboard**: Comprehensive statistics with **improved event-based metrics**
+- **Consistent Terminology**: Professional naming throughout (Default Threshold, Threshold 1)
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
-
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/wcs-analysis-platform.git
-cd wcs-analysis-platform
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd wcs-test
+   ```
 
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+3. **Run the application**:
+   ```bash
+   python run_app.py
+   ```
 
-# Run the application
-python run_app.py
-```
+4. **Access the app**: Open your browser to `http://localhost:8501`
 
-The app will open in your browser at: **http://localhost:8501**
+### Basic Usage
 
-## 📁 Supported File Formats
+1. **Upload Data**: Drag and drop CSV files or select from a folder
+2. **Configure Parameters**: Set epoch durations and threshold values
+3. **Run Analysis**: The app automatically calculates both rolling and contiguous WCS measures
+4. **View Results**: Explore dual WCS visualizations and comprehensive statistics
 
-### **StatSport Files**
-- CSV files with velocity data in `  Speed m/s` column (supports leading spaces)
-- Player identification via `Player Id` and `Player Display Name`
-- Automatic metadata extraction
-- **Tested with**: BR_EC_18s(MD1).csv, BR_EC_18s(MD2).csv
+## 📊 Dual WCS Analysis Explained
 
-### **Catapult Files**
-- GPS data with metadata headers (including quoted formats)
-- Velocity data in `Velocity` column
-- Athlete information from metadata (`"# Athlete: ""Name"""`)
-- **Tested with**: Aaron Ramsey_2024-09-09_Raw Data 09.09.24 MD vs Montenegro.csv, 3A-NT-GP-LSG-10x10-70x60 Export for Michael Obafemi 22346.csv
+### Rolling Window Analysis
+- **Method**: Sliding window approach that maximizes accumulated work (area under the curve)
+- **Principle**: Finds the window that maximizes ∫ velocity(t) dt over the specified time period
+- **Thresholding**: **Correctly applies velocity thresholds** - only data points within the threshold range contribute to the WCS metric
+- **Advantage**: Identifies periods of maximum accumulated work, not just peak velocity
+- **Use Case**: Identifying sustained high-intensity periods and metabolic demand assessment
+- **Key Insight**: WCS epoch ≠ maximum velocity peak (broader peaks often win due to sustained activity)
 
-### **Generic GPS Files**
-- Standard CSV format with velocity column
-- Flexible column mapping
-- Basic metadata support
+### Contiguous Period Analysis
+- **Method**: Finds the best continuous period of the specified duration
+- **Advantage**: Identifies sustained performance over exact time periods
+- **Use Case**: Assessing consistent performance over specific time intervals
 
-## 🎯 Features
+### Scaled Curve Visualization
+- **Display**: Both WCS methods shown as horizontal lines on the velocity plot
+- **Scaling**: Distance values scaled to fit within the **fixed 0-10 m/s velocity range** for consistent visibility
+- **Color Coding**: 
+  - **Rolling**: Solid lines with circle markers
+  - **Contiguous**: Dotted lines with diamond markers
+- **Hover Information**: Detailed distance, time range, and method information
 
-### **Core Functionality**
-- ✅ **Multi-format File Ingestion**: Automatic format detection and processing
-- ✅ **Velocity Data Extraction**: Clean velocity data with validation
-- 🔄 **WCS Analysis**: MATLAB-equivalent worst case scenario algorithms
-- 🏃 **Advanced Kinematic Analysis**: Differentiation and integration for comprehensive movement analysis
-- 📊 **Interactive Visualizations**: Real-time charts with intelligent annotation positioning
-- 📋 **Summary Statistics Tables**: Clean, organized data presentation
-- 📤 **Export Capabilities**: JSON, CSV, and report generation
-- 🔄 **Batch Processing**: Multiple file analysis with folder support
-- ✅ **Multiple File Upload**: Drag and drop support for multiple files simultaneously
-- ✅ **Select All Files**: One-click selection of all CSV files in a folder for batch processing
-- ⚡ **Smart Epoch Deduplication**: Automatic removal of duplicate epoch durations to avoid redundant analysis
-- 🔍 **Debug Information**: Detailed file processing diagnostics and error reporting
-- 📊 **Combined Visualizations**: Multi-file analysis with comprehensive comparison charts
-- 💾 **CSV Export**: Automatic export of all WCS data to OUTPUT folder with timestamped files
+## 🎯 Analysis Parameters
 
-### **Technical Features**
-- **10Hz Processing**: Standard GPS sampling rate support
-- **Advanced Signal Processing**: Central difference differentiation and trapezoidal integration
-- **Comprehensive Kinematic Calculations**: Real-time acceleration, distance, power, and jerk analysis
-- **Intelligent Visualizations**: Smart annotation positioning to prevent overlaps
-- **Robust Error Handling**: Graceful failure with detailed error messages and debugging info
-- **Performance Optimization**: Efficient memory and CPU usage
-- **Modular Architecture**: Clean, maintainable code structure
-- **Robust CSV Parsing**: Handles various CSV formats with metadata headers
-- **Enhanced UI**: Compact, professional interface with reduced font sizes and better organization
+### Epoch Durations
+- **Primary Duration**: Main analysis period (automatically included in all analyses)
+- **Additional Durations**: Multiple epochs for comprehensive assessment
+- **Automatic Deduplication**: Duplicate durations are automatically removed
 
-## 🏗️ Architecture
+### Threshold Configuration
+- **Default Threshold**: Fixed at 0.0-100.0 m/s (analyzes all velocity data)
+- **Threshold 1**: Customizable range for high-intensity performance analysis
+- **Performance Levels**: Automatic classification based on average velocities
+- **Rolling WCS Behavior**: **Correctly applies thresholding** to only include velocity data points within the threshold range
+- **Contiguous WCS Behavior**: Applies thresholding to find best continuous period within range
 
-```
-File Upload → Format Detection → Data Processing → WCS Analysis → Visualization → Export
-     ↓              ↓                ↓              ↓              ↓           ↓
-StatSport    Column Mapping    Velocity Calc   Epoch Analysis   Charts    Reports
-Catapult     Metadata Parse    Distance Calc   Threshold Calc   Graphs    Data Files
-Generic      Validation        Acceleration    Peak Detection   Metrics   Images
-```
+## 📈 Visualization Features
 
-## 🔧 Recent Improvements & Bug Fixes
+### Dual WCS Velocity Analysis
+- **Main Velocity Plot**: Clean velocity time series with **reduced opacity fill** for better curve visibility
+- **Rolling WCS Curves**: Solid lines showing rolling window results with **increased line width and marker size**
+- **Contiguous WCS Curves**: Dotted lines showing contiguous period results
+- **Fixed Y-Axis**: **Consistent 0-10 m/s range** with scaled WCS curves positioned appropriately
+- **Interactive Legend**: Toggle visibility of different analysis methods
+- **Hover Details**: Comprehensive information on hover
 
-### **v1.5.0 - Batch Processing & Export Features**
-- ✅ **CSV Export to OUTPUT Folder**: Automatic export of all WCS analysis results to timestamped CSV files
-- ✅ **Combined Visualizations**: Multi-file analysis with comprehensive comparison charts including:
-  - WCS Distance Distribution by Epoch (Box Plot)
-  - Mean WCS Distance vs Epoch Duration (Line Plot)
-  - Average WCS Distance by Player (Bar Chart)
-  - WCS Distance Heatmap by Player and Epoch
-  - Individual Player Analysis Grid
-- ✅ **Batch Processing Module**: New dedicated module for handling multiple files efficiently
-- ✅ **Download Combined Data**: Direct download of combined WCS data as CSV files
-- ✅ **Enhanced Export Options**: Multiple export formats with user-friendly interface
+### Enhanced WCS Analysis
+- **Multi-Panel Layout**: Velocity, timeline, and intensity visualization
+- **Period Highlighting**: Clean background highlights for WCS periods
+- **Performance Timeline**: Visual representation of period distribution
+- **Intensity Mapping**: Normalized performance intensity over time
 
-### **v1.4.0 - Enhanced UI & Visualization Improvements**
-- ✅ **Summary Statistics Tables**: Replaced individual metric displays with clean, organized tables
-- ✅ **Reduced Font Sizes**: More compact interface with better space utilization
-- ✅ **Fixed Annotation Errors**: Resolved "Invalid annotation position" errors in visualizations
-- ✅ **Enhanced Debug Information**: Added detailed file content preview and processing diagnostics
-- ✅ **Improved Error Handling**: Better file parsing error messages and recovery
-- ✅ **Professional Layout**: Cleaner, more organized data presentation
-- ✅ **Compact WCS Results**: Tabular format for easier comparison across epoch durations
+### Kinematic Analysis
+- **Multi-Panel Charts**: Velocity, acceleration, distance, and power
+- **Streamlined Design**: **Removed redundant deceleration plot** (acceleration covers both positive and negative)
+- **Interactive Elements**: Zoom, pan, and hover functionality
+- **Export Capabilities**: High-quality chart export
 
-### **v1.3.0 - Kinematic Analysis & Advanced Signal Processing**
-- ✅ **Kinematic Parameters**: Added differentiation and integration of velocity signal to calculate acceleration and distance
-- ✅ **Advanced Signal Processing**: Implemented central difference differentiation and trapezoidal integration
-- ✅ **Comprehensive Metrics**: Added power, jerk, and smoothed signal calculations
-- ✅ **Enhanced Visualizations**: New kinematic analysis charts with multiple subplots
-- ✅ **Real-time Statistics**: Live calculation of acceleration, distance, and power statistics
-- ✅ **Improved Annotation System**: Intelligent positioning to prevent text overlap in visualizations
-- ✅ **Better Layout**: Enhanced spacing, margins, and legend positioning for cleaner charts
+## 📁 File Format Support
 
-### **v1.2.0 - Select All Files & Enhanced Batch Processing**
-- ✅ **Select All Files Feature**: Added checkbox to select all CSV files in a folder at once
-- ✅ **Dual Input Support**: Enhanced file ingestion to handle both uploaded files and folder-selected files
-- ✅ **Fixed File Path Processing**: Resolved "'str' object has no attribute 'decode'" error for folder-selected files
-- ✅ **Improved Catapult Processing**: Added dedicated function for processing Catapult files from file paths
-- ✅ **Enhanced User Experience**: Better feedback and confirmation messages for batch file selection
+### StatSport Format
+- **Automatic Detection**: Recognizes StatSport files by header structure
+- **Metadata Extraction**: Player name, date, and session information
+- **Column Mapping**: Automatic velocity and time column identification
 
-### **v1.1.0 - File Processing Enhancements**
-- ✅ **Fixed Import Issues**: Resolved relative import errors for Streamlit deployment
-- ✅ **Enhanced CSV Parsing**: Improved handling of StatSport files with leading spaces in column names
-- ✅ **Catapult Metadata Extraction**: Fixed metadata parsing for quoted headers (`"# Athlete: ""Name"""`)
-- ✅ **Multiple File Upload**: Added support for drag-and-drop of multiple files simultaneously
-- ✅ **WCS Analysis Optimization**: Eliminated file re-reading issues during analysis phase
-- ✅ **Robust Error Handling**: Better error messages and graceful failure recovery
+### Catapult Format
+- **Metadata Handling**: Skips metadata lines during parsing
+- **Robust Parsing**: Handles quoted headers and special characters
+- **Column Detection**: Automatic identification of velocity columns
 
-### **Supported File Format Improvements**
-- **StatSport**: Now handles `'  Speed m/s'` (two spaces), `' Player Display Name'` (one space)
-- **Catapult**: Improved metadata extraction from quoted headers and various CSV formats
-- **Generic GPS**: Enhanced column mapping and validation
+### Generic GPS Format
+- **Flexible Mapping**: Customizable column name mapping
+- **Format Detection**: Automatic format identification
+- **Error Handling**: Graceful handling of parsing errors
 
-### **Performance Optimizations**
-- **Efficient File Processing**: Single-pass file reading with optimized data flow
-- **Memory Management**: Reduced memory usage for large GPS datasets
-- **Batch Processing**: Streamlined multiple file analysis workflow
+## 🔄 Batch Processing
 
-## 🚀 Quick Start Guide
+### Multiple File Upload
+- **Drag & Drop**: Support for multiple file upload
+- **Progress Tracking**: Real-time progress indicators
+- **Error Handling**: Individual file error reporting
+- **Combined Analysis**: Aggregate statistics across files
 
-### **Enhanced File Processing with Debug Information**
-The app now includes comprehensive debugging information to help troubleshoot file processing issues:
+### Folder Selection
+- **Directory Browsing**: Select files from local directories
+- **Select All Option**: Bulk selection of CSV files
+- **File Filtering**: Automatic CSV file detection
+- **Path Validation**: Error handling for invalid paths
 
-1. **Upload files** using drag-and-drop or folder selection
-2. **View debug information** showing file content preview and format detection
-3. **Monitor processing progress** with detailed feedback
-4. **Identify issues** with clear error messages and diagnostics
+### Export Capabilities
+- **CSV Export**: Comprehensive results export
+- **Combined Data**: All files in single export file
+- **Detailed Information**: Complete analysis results
+- **Timestamped Files**: Automatic file naming with timestamps
 
-### **Summary Statistics Tables**
-The app now presents all statistics in clean, organized tables:
+## 🛠️ Technical Details
 
-1. **Velocity Statistics**: Max, mean, min velocity and standard deviation
-2. **Kinematic Parameters**: Acceleration, distance, and power metrics
-3. **WCS Analysis Results**: Default Threshold and Threshold 1 distances and durations
-4. **Compact Presentation**: All data organized by category for easy comparison
+### Data Processing
+- **10Hz Standardization**: All data processed to 10Hz sampling rate
+- **Quality Control**: Automatic data validation and cleaning
+- **Missing Data Handling**: Graceful handling of incomplete data
+- **Performance Optimization**: Efficient processing for large datasets
 
-### **Select All Files Feature**
-The app includes a powerful "Select All Files" feature for batch processing:
+### Analysis Algorithms
+- **Central Difference**: Accurate acceleration calculation
+- **Trapezoidal Integration**: Precise distance calculation
+- **Rolling Window**: **Corrected implementation with proper thresholding**
+- **Contiguous Search**: Optimized period identification
+- **Power Calculation**: **Based on absolute acceleration** for physically meaningful values
 
-1. **Select "Select from Folder"** in the sidebar
-2. **Enter folder path** (e.g., `data/test_data`)
-3. **Check "Select All Files"** to automatically select all CSV files
-4. **Configure analysis parameters** and run batch processing
-5. **View results** for all files simultaneously
+### Visualization Engine
+- **Plotly Integration**: Interactive, publication-quality charts
+- **Responsive Design**: Adapts to different screen sizes
+- **Export Options**: PNG, SVG, and HTML export
+- **Performance Optimization**: Efficient rendering for large datasets
 
-This feature is perfect for processing multiple GPS sessions, comparing different athletes, or analyzing entire datasets at once.
+## 📊 Performance Metrics
 
-### **Kinematic Analysis Feature**
-The app includes advanced kinematic analysis capabilities:
+### Velocity Statistics
+- **Peak Velocity**: Maximum velocity achieved
+- **Mean Velocity**: Average velocity over session
+- **Velocity Variability**: Standard deviation and range
+- **Duration Analysis**: Total session duration and active time
 
-1. **Automatic Calculation**: Velocity signals are automatically differentiated and integrated
-2. **Comprehensive Metrics**: Get acceleration, distance, power, and jerk analysis
-3. **Enhanced Visualizations**: Multi-panel charts showing all kinematic parameters
-4. **Real-time Statistics**: Live calculation of kinematic statistics during analysis
+### WCS Metrics
+- **Distance Covered**: Total distance in WCS periods
+- **Time in Threshold**: Duration within specified velocity ranges
+- **Performance Intensity**: Average velocity during WCS periods
+- **Method Comparison**: Rolling vs. contiguous analysis results
 
-This provides deeper insights into movement patterns, performance characteristics, and athletic performance metrics.
-
-## 📊 Usage Examples
-
-### **Single File Analysis**
-1. Launch the app: `python run_app.py`
-2. Select "Upload File" method
-3. Upload your GPS CSV file
-4. Configure WCS parameters
-5. View results and export data
-
-### **Multiple File Analysis**
-1. Select "Upload File" method
-2. **Drag and drop multiple files** simultaneously into the uploader, or use Ctrl+Click (Cmd+Click on Mac) to select multiple files
-3. Configure WCS parameters
-4. Enable "Batch Processing Mode" for comparative analysis
-5. View results for all files and export data
-
-### **Folder-based Batch Analysis**
-1. Select "Select from Folder" method
-2. Enter folder path containing CSV files (e.g., `data/test_data`)
-3. Check "Select All Files" to process all CSV files in the folder
-4. Configure WCS parameters and enable export options
-5. View combined visualizations and export data to OUTPUT folder
-
-### **Batch Processing with Export**
-1. Upload multiple files or select from folder
-2. Enable "Include Export Options" in the sidebar
-3. Click "📊 Export WCS Data to CSV" to save all results to OUTPUT folder
-4. Use "📋 Download Combined Data" for immediate CSV download
-5. View comprehensive combined visualizations for multi-file analysis
-
-### **Combined Visualizations**
-When processing multiple files, the app automatically generates:
-- **WCS Distance Distribution**: Box plots showing distance ranges by epoch duration
-- **Mean Distance Trends**: Line plots showing how average distances change with epoch duration
-- **Player Comparisons**: Bar charts comparing average performance across players
-- **Performance Heatmaps**: Color-coded tables showing individual player performance by epoch
-- **Individual Analysis Grid**: Detailed velocity profiles and epoch comparisons for each player
-3. **Use "Select All Files" checkbox** to select all CSV files at once, or manually select specific files
-4. Configure WCS parameters (epoch duration, thresholds)
-5. Enable "Batch Processing Mode" for comparative analysis
-6. View results for all files and export data
-
-### **Custom Analysis**
-1. Configure custom epoch durations (30s, 60s, 90s, etc.)
-   - **Primary Epoch Duration**: Main analysis window
-   - **Additional Epoch Durations**: Extra durations for comprehensive analysis
-   - **Smart Deduplication**: Duplicate durations are automatically removed to avoid redundant analysis
-2. Set custom velocity thresholds (Default Threshold: 0-100 m/s, Threshold 1: customizable)
-3. Enable advanced visualizations
-4. Export comprehensive reports
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-python -m pytest tests/
-
-# Run specific test module
-python -m pytest tests/test_file_ingestion.py
-
-# Run with coverage
-python -m pytest --cov=src tests/
-```
-
-## 📚 Documentation
-
-- **[API Documentation](docs/API.md)**: Detailed API reference
-- **[Deployment Guide](docs/DEPLOYMENT.md)**: Production deployment instructions
-- **[Contributing Guidelines](docs/CONTRIBUTING.md)**: How to contribute
-- **[Changelog](docs/CHANGELOG.md)**: Version history and updates
+### Enhanced Kinematic Parameters
+- **Acceleration Profile**: **Event-based metrics** - mean acceleration over acceleration events only
+- **Deceleration Analysis**: **Separate deceleration metrics** with event counting
+- **Distance Analysis**: Total distance and distance rate
+- **Power Output**: **Instantaneous power based on absolute acceleration**
+- **Movement Quality**: Jerk analysis for movement smoothness
 
 ## 🔧 Configuration
 
-The application can be configured via `config/app_config.yaml`:
+### App Configuration
+- **Port Settings**: Configurable server port (default: 8501)
+- **Layout Options**: Wide layout for better visualization
+- **Theme Customization**: Professional dark/light theme support
+- **Performance Settings**: Optimized for large datasets
 
-```yaml
-# Application settings
-app:
-  title: "WCS Analysis Platform"
-  port: 8501
-  debug: false
+### Analysis Settings
+- **Sampling Rate**: Fixed at 10Hz for consistency
+- **Epoch Durations**: Configurable analysis periods
+- **Threshold Values**: Customizable velocity thresholds
+- **Visualization Options**: Toggle different chart types
 
-# Processing settings
-processing:
-  sampling_rate: 10  # Hz
-  max_file_size: 100  # MB
-  supported_formats: ["csv"]
+## 🚨 Troubleshooting
 
-# Analysis settings
-analysis:
-  default_epoch_duration: 1.0  # minutes
-  default_thresholds:
-    # Default threshold is always 0.0 - 100.0 m/s (all velocities)
-th1_min: 5.0
-th1_max: 100.0
-```
+### Common Issues
+1. **Import Errors**: Ensure all dependencies are installed
+2. **File Upload Issues**: Check file format and size limits
+3. **Analysis Errors**: Verify data quality and column names
+4. **Visualization Issues**: Check browser compatibility
 
-## 🔧 Troubleshooting
+### Performance Tips
+- **Large Files**: Use batch processing for multiple large files
+- **Memory Usage**: Close unused browser tabs during analysis
+- **Processing Speed**: Reduce epoch durations for faster analysis
+- **Export Optimization**: Use CSV export for large datasets
 
-### **File Processing Issues**
-If you're having trouble processing files:
+## 📝 Changelog
 
-1. **Check Debug Information**: The app now shows detailed file content preview and format detection
-2. **File Format**: Ensure files are in supported CSV format (StatSport, Catapult, or Generic GPS)
-3. **Column Names**: Check that velocity data is in the expected column (Speed m/s, Velocity, etc.)
-4. **File Encoding**: Ensure files are UTF-8 encoded
-5. **File Size**: Large files may take longer to process - check progress indicators
+### Latest Updates (Today's Achievements! 🎉)
+- **✅ Corrected Rolling WCS Implementation**: Fixed thresholding behavior to properly apply velocity thresholds
+- **✅ Enhanced Visualization Layering**: Improved curve visibility with reduced velocity line opacity and increased WCS curve prominence
+- **✅ Consistent Professional Terminology**: Updated all "TH_1" references to "Threshold 1" throughout the application
+- **✅ Fixed Y-Axis Scaling**: Implemented consistent 0-10 m/s range with properly scaled WCS curves
+- **✅ Streamlined Kinematic Analysis**: Removed redundant deceleration plot for cleaner visualization
+- **✅ Improved Power Calculation**: Updated to use absolute acceleration for physically meaningful values
+- **✅ Enhanced Event-Based Metrics**: Mean acceleration and deceleration now calculated over events only
+- **✅ Comprehensive Documentation**: Updated README and created detailed rolling WCS theory documentation
 
-### **Multiple File Upload Issues**
-If you're having trouble uploading multiple files:
-
-1. **Drag and Drop**: Try dragging multiple files directly into the upload area
-2. **Keyboard Selection**: Use Ctrl+Click (Windows/Linux) or Cmd+Click (Mac) to select multiple files
-3. **Browser Compatibility**: Ensure you're using a modern browser (Chrome, Firefox, Safari, Edge)
-4. **File Size**: Large files may take longer to upload - check the progress indicators
-5. **File Format**: Ensure all files are in CSV format
-
-### **Visualization Issues**
-If visualizations aren't displaying properly:
-
-1. **Annotation Errors**: Fixed in v1.4.0 - should no longer occur
-2. **Browser Compatibility**: Ensure you're using a modern browser with JavaScript enabled
-3. **Data Quality**: Check that velocity data contains valid numerical values
-4. **File Size**: Very large files may take longer to render visualizations
-
-### **Performance Tips**
-- For large datasets, consider using the "Select from Folder" option
-- Enable "Batch Processing Mode" for comparative analysis of multiple files
-- Use the "Select All Files" feature for folder-based processing
-- Monitor debug information to identify processing bottlenecks
-
-## 🚀 Deployment
-
-### **Local Development**
-```bash
-python run_app.py
-```
-
-### **Production Deployment**
-```bash
-# Using Docker
-docker build -t wcs-analysis-platform .
-docker run -p 8501:8501 wcs-analysis-platform
-
-# Using Streamlit Cloud
-# Deploy directly from GitHub repository
-```
+### Previous Features
+- **Dual WCS Analysis**: Added both rolling and contiguous WCS methods
+- **Scaled Curve Visualization**: WCS periods displayed as curves on velocity plots
+- **Enhanced UI**: Improved layout and user experience
+- **Batch Processing**: Enhanced multiple file handling
+- **Export Features**: Comprehensive data export capabilities
+- **Multi-format Support**: StatSport, Catapult, and Generic GPS
+- **Kinematic Analysis**: Acceleration, distance, and power calculations
+- **Enhanced Visualizations**: Multi-panel charts and performance mapping
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](docs/CONTRIBUTING.md) for details.
-
-### **Development Setup**
-```bash
-# Fork and clone the repository
-git clone https://github.com/yourusername/wcs-analysis-platform.git
-cd wcs-analysis-platform
-
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-python -m pytest tests/
-
-# Make your changes and submit a pull request
-```
+We welcome contributions! Please see our contributing guidelines for details on:
+- Code style and standards
+- Testing requirements
+- Documentation updates
+- Feature requests and bug reports
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **MATLAB WCS Algorithms**: Based on MATLAB-equivalent worst case scenario analysis
-- **Streamlit**: Web application framework
-- **Pandas**: Data processing and analysis
-- **Plotly**: Interactive visualizations
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/wcs-analysis-platform/issues)
-- **Documentation**: [docs/](docs/)
-- **Email**: your.email@example.com
-
----
-
-**Made with ❤️ for sports performance analysis** 
+This project is licensed under the MIT License - see the LICENSE file for details. 

@@ -43,7 +43,7 @@ wcs-analysis-platform/
 - ✅ **Velocity Data Extraction**: Clean, validated velocity data
 - ✅ **WCS Algorithms**: Sliding window analysis
 - ✅ **Multiple Epochs**: Configurable analysis windows
-- ✅ **Threshold Support**: TH_0 and TH_1 velocity ranges
+- ✅ **Threshold Support**: Default Threshold and Threshold 1 velocity ranges
 - ✅ **Performance Metrics**: Distance, time, and statistics
 
 #### **3. Professional Streamlit Interface**
@@ -80,8 +80,8 @@ wcs-analysis-platform/
 - **Sampling Rate**: Fixed at 10Hz
 - **Epoch Durations**: 0.5, 1.0, 1.5, 2.0, 3.0, 5.0 minutes
 - **Thresholds**: 
-  - TH_0: 0.0 < V < 100.0 m/s
-  - TH_1: 5.0 < V < 100.0 m/s
+  - Default Threshold: 0.0 < V < 100.0 m/s
+- Threshold 1: 5.0 < V < 100.0 m/s
 - **Output Metrics**: Distance, time, start/end indices
 
 #### **Performance Characteristics**

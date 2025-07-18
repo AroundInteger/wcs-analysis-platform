@@ -203,8 +203,8 @@ docker run -p 8501:8501 wcs-analysis-platform
 **Worst Case Scenario (WCS)** analysis identifies the time windows with the highest cumulative distance within specified velocity thresholds.
 
 ### Key Metrics
-- **TH_0 Distance**: Maximum distance in velocity range (0 < V < 100 m/s)
-- **TH_1 Distance**: Maximum distance in velocity range (5 < V < 100 m/s)
+- **Default Threshold Distance**: Maximum distance in velocity range (0 < V < 100 m/s)
+- **Threshold 1 Distance**: Maximum distance in velocity range (5 < V < 100 m/s)
 - **WCS Period**: Time window with maximum performance
 - **Velocity Statistics**: Mean, peak, and distribution metrics
 

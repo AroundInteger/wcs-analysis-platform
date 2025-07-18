@@ -76,7 +76,7 @@ def process_batch_files(file_inputs: List, parameters: Dict[str, Any]) -> List[D
 
 def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataFrame:
     """
-    Create a combined DataFrame with all WCS results
+    Create a combined DataFrame with all WCS results (both rolling and contiguous)
     
     Args:
         all_results: List of results from batch processing
@@ -88,18 +88,30 @@ def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataF
     
     for result in all_results:
         metadata = result['metadata']
-        wcs_results = result.get('wcs_results', [])
+        
+        # Get data from the new structure
+        rolling_wcs_results = result.get('rolling_wcs_results', [])
+        contiguous_wcs_results = result.get('contiguous_wcs_results', [])
         epoch_durations = result.get('epoch_durations', [])
         velocity_stats = result.get('velocity_stats', {})
         
         player_name = metadata.get('player_name', 'Unknown')
         file_name = result.get('file_name', 'Unknown')
         
-        for i, epoch_result in enumerate(wcs_results):
+        # If file_name is not in result, get it from file_path
+        if file_name == 'Unknown':
+            file_path = result.get('file_path', 'Unknown')
+            if isinstance(file_path, str):
+                file_name = os.path.basename(file_path)
+            else:
+                file_name = file_path.name if hasattr(file_path, 'name') else 'Unknown'
+        
+        # Process rolling WCS results
+        for i, epoch_result in enumerate(rolling_wcs_results):
             if len(epoch_result) >= 8:
                 epoch_duration = epoch_durations[i] if i < len(epoch_durations) else f"Epoch_{i+1}"
                 
-                # Default threshold data
+                # Default threshold data (rolling)
                 th0_distance = epoch_result[0]
                 th0_duration = epoch_result[1]
                 th0_start = epoch_result[2] / 10
@@ -110,6 +122,7 @@ def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataF
                     'File_Name': file_name,
                     'Player_Name': player_name,
                     'Epoch_Duration_Minutes': epoch_duration,
+                    'WCS_Method': 'Rolling',
                     'Threshold_Type': 'Default Threshold',
                     'WCS_Distance_m': th0_distance,
                     'WCS_Duration_s': th0_duration,
@@ -125,7 +138,7 @@ def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataF
                     'Processing_Date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 })
                 
-                # Threshold 1 data
+                # Threshold 1 data (rolling)
                 th1_distance = epoch_result[4]
                 th1_duration = epoch_result[5]
                 th1_start = epoch_result[6] / 10
@@ -136,6 +149,66 @@ def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataF
                     'File_Name': file_name,
                     'Player_Name': player_name,
                     'Epoch_Duration_Minutes': epoch_duration,
+                    'WCS_Method': 'Rolling',
+                    'Threshold_Type': 'Threshold 1',
+                    'WCS_Distance_m': th1_distance,
+                    'WCS_Duration_s': th1_duration,
+                    'Start_Time_s': th1_start,
+                    'End_Time_s': th1_end,
+                    'Avg_Velocity_m_s': th1_avg_velocity,
+                    'File_Mean_Velocity_m_s': velocity_stats.get('mean', 0),
+                    'File_Max_Velocity_m_s': velocity_stats.get('max', 0),
+                    'File_Min_Velocity_m_s': velocity_stats.get('min', 0),
+                    'File_Velocity_Std_m_s': velocity_stats.get('std', 0),
+                    'Total_Records': metadata.get('total_records', 0),
+                    'Duration_Minutes': metadata.get('duration_minutes', 0),
+                    'Processing_Date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+        
+        # Process contiguous WCS results
+        for i, epoch_result in enumerate(contiguous_wcs_results):
+            if len(epoch_result) >= 8:
+                epoch_duration = epoch_durations[i] if i < len(epoch_durations) else f"Epoch_{i+1}"
+                
+                # Default threshold data (contiguous)
+                th0_distance = epoch_result[0]
+                th0_duration = epoch_result[1]
+                th0_start = epoch_result[2] / 10
+                th0_end = epoch_result[3] / 10
+                th0_avg_velocity = th0_distance / th0_duration if th0_duration > 0 else 0
+                
+                combined_data.append({
+                    'File_Name': file_name,
+                    'Player_Name': player_name,
+                    'Epoch_Duration_Minutes': epoch_duration,
+                    'WCS_Method': 'Contiguous',
+                    'Threshold_Type': 'Default Threshold',
+                    'WCS_Distance_m': th0_distance,
+                    'WCS_Duration_s': th0_duration,
+                    'Start_Time_s': th0_start,
+                    'End_Time_s': th0_end,
+                    'Avg_Velocity_m_s': th0_avg_velocity,
+                    'File_Mean_Velocity_m_s': velocity_stats.get('mean', 0),
+                    'File_Max_Velocity_m_s': velocity_stats.get('max', 0),
+                    'File_Min_Velocity_m_s': velocity_stats.get('min', 0),
+                    'File_Velocity_Std_m_s': velocity_stats.get('std', 0),
+                    'Total_Records': metadata.get('total_records', 0),
+                    'Duration_Minutes': metadata.get('duration_minutes', 0),
+                    'Processing_Date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                
+                # Threshold 1 data (contiguous)
+                th1_distance = epoch_result[4]
+                th1_duration = epoch_result[5]
+                th1_start = epoch_result[6] / 10
+                th1_end = epoch_result[7] / 10
+                th1_avg_velocity = th1_distance / th1_duration if th1_duration > 0 else 0
+                
+                combined_data.append({
+                    'File_Name': file_name,
+                    'Player_Name': player_name,
+                    'Epoch_Duration_Minutes': epoch_duration,
+                    'WCS_Method': 'Contiguous',
                     'Threshold_Type': 'Threshold 1',
                     'WCS_Distance_m': th1_distance,
                     'WCS_Duration_s': th1_duration,
@@ -430,9 +503,21 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
             row = i + 1
             player_name = result['metadata'].get('player_name', 'Unknown')
             
+            # Get data from the correct structure
+            results_data = result['results']
+            if isinstance(results_data, dict):
+                processed_data = results_data.get('processed_data')
+                wcs_results = results_data.get('wcs_results', [])
+                epoch_durations = results_data.get('epoch_durations', [])
+            else:
+                # Fallback for old structure
+                processed_data = result.get('processed_data')
+                wcs_results = result.get('wcs_results', [])
+                epoch_durations = result.get('epoch_durations', [])
+            
             # Velocity profile (left column)
-            if 'processed_data' in result:
-                df = result['processed_data']
+            if processed_data is not None:
+                df = processed_data
                 time_data = df['Seconds'] if 'Seconds' in df.columns else np.arange(len(df)) / 10
                 
                 # Limit time range for better visibility (first 10 minutes)
@@ -452,8 +537,6 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                 )
                 
                 # Add WCS period highlights (only if within time range)
-                wcs_results = result.get('wcs_results', [])
-                epoch_durations = result.get('epoch_durations', [])
                 colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
                 
                 for j, epoch_result in enumerate(wcs_results):
@@ -474,8 +557,6 @@ def create_individual_player_grid(all_results: List[Dict[str, Any]]):
                             )
             
             # Epoch comparison (right column)
-            wcs_results = result.get('wcs_results', [])
-            epoch_durations = result.get('epoch_durations', [])
             
             if wcs_results:
                 distances = [epoch_result[0] for epoch_result in wcs_results if len(epoch_result) >= 8]
