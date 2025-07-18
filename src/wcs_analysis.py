@@ -11,16 +11,149 @@ from typing import Dict, List, Tuple, Any, Optional
 import streamlit as st
 
 
+def calculate_acceleration(velocity_data: np.ndarray, sampling_rate: int = 10) -> np.ndarray:
+    """
+    Calculate acceleration by differentiating velocity signal
+    
+    Args:
+        velocity_data: Array of velocity values (m/s)
+        sampling_rate: Sampling rate in Hz
+        
+    Returns:
+        Array of acceleration values (m/s²)
+    """
+    try:
+        if len(velocity_data) < 2:
+            return np.array([])
+        
+        # Calculate time step
+        dt = 1.0 / sampling_rate
+        
+        # Use central difference for interior points
+        acceleration = np.zeros_like(velocity_data)
+        
+        # Forward difference for first point
+        if len(velocity_data) > 1:
+            acceleration[0] = (velocity_data[1] - velocity_data[0]) / dt
+        
+        # Central difference for interior points
+        for i in range(1, len(velocity_data) - 1):
+            acceleration[i] = (velocity_data[i + 1] - velocity_data[i - 1]) / (2 * dt)
+        
+        # Backward difference for last point
+        if len(velocity_data) > 1:
+            acceleration[-1] = (velocity_data[-1] - velocity_data[-2]) / dt
+        
+        return acceleration
+        
+    except Exception as e:
+        st.error(f"Error calculating acceleration: {str(e)}")
+        return np.zeros_like(velocity_data)
+
+
+def calculate_distance(velocity_data: np.ndarray, sampling_rate: int = 10) -> np.ndarray:
+    """
+    Calculate cumulative distance by integrating velocity signal
+    
+    Args:
+        velocity_data: Array of velocity values (m/s)
+        sampling_rate: Sampling rate in Hz
+        
+    Returns:
+        Array of cumulative distance values (m)
+    """
+    try:
+        if len(velocity_data) == 0:
+            return np.array([])
+        
+        # Calculate time step
+        dt = 1.0 / sampling_rate
+        
+        # Use trapezoidal integration for better accuracy
+        distance = np.zeros_like(velocity_data)
+        
+        # First point (no distance yet)
+        distance[0] = 0.0
+        
+        # Integrate using trapezoidal rule
+        for i in range(1, len(velocity_data)):
+            # Average velocity between points * time step
+            avg_velocity = (velocity_data[i] + velocity_data[i-1]) / 2
+            distance[i] = distance[i-1] + avg_velocity * dt
+        
+        return distance
+        
+    except Exception as e:
+        st.error(f"Error calculating distance: {str(e)}")
+        return np.zeros_like(velocity_data)
+
+
+def calculate_kinematic_parameters(velocity_data: np.ndarray, sampling_rate: int = 10) -> Dict[str, np.ndarray]:
+    """
+    Calculate comprehensive kinematic parameters from velocity signal
+    
+    Args:
+        velocity_data: Array of velocity values (m/s)
+        sampling_rate: Sampling rate in Hz
+        
+    Returns:
+        Dictionary containing acceleration, distance, and other kinematic parameters
+    """
+    try:
+        # Calculate acceleration
+        acceleration = calculate_acceleration(velocity_data, sampling_rate)
+        
+        # Calculate cumulative distance
+        distance = calculate_distance(velocity_data, sampling_rate)
+        
+        # Calculate time array
+        time = np.arange(len(velocity_data)) / sampling_rate
+        
+        # Calculate additional parameters
+        # Instantaneous power (P = F*v = m*a*v, assuming m=1 for relative comparison)
+        power = acceleration * velocity_data
+        
+        # Rate of change of acceleration (jerk)
+        jerk = calculate_acceleration(acceleration, sampling_rate) if len(acceleration) > 2 else np.zeros_like(acceleration)
+        
+        # Calculate moving averages for smoothing
+        window_size = min(5, len(velocity_data) // 10)  # Adaptive window size
+        if window_size > 1:
+            velocity_smooth = np.convolve(velocity_data, np.ones(window_size)/window_size, mode='same')
+            acceleration_smooth = np.convolve(acceleration, np.ones(window_size)/window_size, mode='same')
+        else:
+            velocity_smooth = velocity_data
+            acceleration_smooth = acceleration
+        
+        kinematic_params = {
+            'time': time,
+            'velocity': velocity_data,
+            'velocity_smooth': velocity_smooth,
+            'acceleration': acceleration,
+            'acceleration_smooth': acceleration_smooth,
+            'distance': distance,
+            'power': power,
+            'jerk': jerk,
+            'sampling_rate': sampling_rate
+        }
+        
+        return kinematic_params
+        
+    except Exception as e:
+        st.error(f"Error calculating kinematic parameters: {str(e)}")
+        return {}
+
+
 def process_velocity_data(df: pd.DataFrame, sampling_rate: int = 10) -> pd.DataFrame:
     """
-    Process velocity data to 10Hz sampling rate
+    Process velocity data to 10Hz sampling rate and calculate kinematic parameters
     
     Args:
         df: DataFrame with velocity data
         sampling_rate: Target sampling rate (default 10Hz)
         
     Returns:
-        Processed DataFrame with standardized velocity data
+        Processed DataFrame with standardized velocity data and kinematic parameters
     """
     try:
         # Ensure we have required columns
@@ -44,6 +177,19 @@ def process_velocity_data(df: pd.DataFrame, sampling_rate: int = 10) -> pd.DataF
         
         # Create standardized time index
         df['Seconds'] = np.arange(len(df)) / sampling_rate
+        
+        # Calculate kinematic parameters
+        velocity_data = df['Velocity'].values
+        kinematic_params = calculate_kinematic_parameters(velocity_data, sampling_rate)
+        
+        # Add kinematic parameters to DataFrame
+        if kinematic_params:
+            df['Acceleration'] = kinematic_params['acceleration']
+            df['Distance'] = kinematic_params['distance']
+            df['Power'] = kinematic_params['power']
+            df['Jerk'] = kinematic_params['jerk']
+            df['Velocity_Smooth'] = kinematic_params['velocity_smooth']
+            df['Acceleration_Smooth'] = kinematic_params['acceleration_smooth']
         
         return df
         
@@ -114,29 +260,23 @@ def calculate_wcs_period(velocity_data: np.ndarray,
         return 0.0, 0.0, 0, 0
 
 
-def perform_wcs_analysis(uploaded_file, parameters: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_info: Dict[str, Any], parameters: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Perform complete WCS analysis on uploaded file
+    Perform complete WCS analysis on processed DataFrame
     
     Args:
-        uploaded_file: Streamlit uploaded file or file path
+        df: Processed DataFrame with velocity data
+        metadata: File metadata dictionary
+        file_type_info: File type information
         parameters: Analysis parameters dictionary
         
     Returns:
         Dictionary containing analysis results
     """
     try:
-        # Import file ingestion function
-        from .file_ingestion import read_csv_with_metadata, validate_velocity_data
-        
-        # Read file
-        df, metadata, file_type_info = read_csv_with_metadata(uploaded_file)
-        
-        if df is None or metadata is None:
-            st.error("Failed to read file")
-            return None
-        
         # Validate velocity data
+        from file_ingestion import validate_velocity_data
+        
         if not validate_velocity_data(df):
             st.error("Velocity data validation failed")
             return None
@@ -157,6 +297,33 @@ def perform_wcs_analysis(uploaded_file, parameters: Dict[str, Any]) -> Optional[
             'total_samples': len(velocity_data),
             'duration_seconds': len(velocity_data) / sampling_rate
         }
+        
+        # Calculate kinematic statistics
+        kinematic_stats = {}
+        if 'Acceleration' in processed_df.columns:
+            accel_data = processed_df['Acceleration'].values
+            kinematic_stats['acceleration'] = {
+                'mean': float(np.mean(accel_data)),
+                'max': float(np.max(accel_data)),
+                'min': float(np.min(accel_data)),
+                'std': float(np.std(accel_data))
+            }
+        
+        if 'Distance' in processed_df.columns:
+            distance_data = processed_df['Distance'].values
+            kinematic_stats['distance'] = {
+                'total': float(distance_data[-1]) if len(distance_data) > 0 else 0.0,
+                'mean_rate': float(distance_data[-1] / (len(velocity_data) / sampling_rate)) if len(velocity_data) > 0 else 0.0
+            }
+        
+        if 'Power' in processed_df.columns:
+            power_data = processed_df['Power'].values
+            kinematic_stats['power'] = {
+                'mean': float(np.mean(power_data)),
+                'max': float(np.max(power_data)),
+                'min': float(np.min(power_data)),
+                'std': float(np.std(power_data))
+            }
         
         # Perform WCS analysis for different epoch durations
         epoch_durations = parameters.get('epoch_durations', [1.0])
@@ -190,6 +357,7 @@ def perform_wcs_analysis(uploaded_file, parameters: Dict[str, Any]) -> Optional[
         results = {
             'processed_data': processed_df,
             'velocity_stats': velocity_stats,
+            'kinematic_stats': kinematic_stats,
             'wcs_results': wcs_results,
             'parameters': parameters,
             'metadata': metadata,
