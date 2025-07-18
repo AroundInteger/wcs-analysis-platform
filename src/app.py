@@ -71,12 +71,12 @@ def main():
         st.header("⚙️ Configuration")
         
         # Data input options
-        st.subheader("📁 Data Input")
-        input_method = st.radio(
-            "Choose input method:",
-            ["Upload File", "Select from Folder"],
-            help="Upload multiple files or select from a folder"
-        )
+        with st.expander("📁 Data Input", expanded=True):
+            input_method = st.radio(
+                "Choose input method:",
+                ["Upload File", "Select from Folder"],
+                help="Upload multiple files or select from a folder"
+            )
         
         # Instructions for multiple file upload
         if input_method == "Upload File":
@@ -137,59 +137,69 @@ def main():
                 selected_files = []
         
         # Analysis parameters
-        st.subheader("🔧 WCS Parameters")
-        
-        # Epoch durations
-        epoch_duration = st.selectbox(
-            "Primary Epoch Duration (minutes)",
-            [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
-            index=1,  # Default to 1.0 minute
-            help="Primary duration for WCS analysis (will be included in all analyses)"
-        )
-        
-        epoch_durations = st.multiselect(
-            "Additional Epoch Durations",
-            [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
-            default=[2.0, 5.0],  # Removed 1.0 since it's the default primary
-            help="Additional epoch durations for comprehensive analysis (duplicates with primary will be automatically removed)"
-        )
-        
-        # Show warning if user selects the same duration in both fields
-        if epoch_duration in epoch_durations:
-            st.warning(f"⚠️ **Note**: {epoch_duration} minute duration is selected in both fields. Duplicates will be automatically removed during analysis.")
-        
-        # Sampling rate (fixed at 10Hz for all files)
-        sampling_rate = 10
-        st.info(f"📊 **Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
+        with st.expander("🔧 WCS Parameters", expanded=True):
+            # Epoch durations
+            epoch_duration = st.selectbox(
+                "Primary Epoch Duration (minutes)",
+                [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
+                index=1,  # Default to 1.0 minute
+                help="Primary duration for WCS analysis (will be included in all analyses)"
+            )
+            
+            epoch_durations = st.multiselect(
+                "Additional Epoch Durations",
+                [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
+                default=[2.0, 5.0],  # Removed 1.0 since it's the default primary
+                help="Additional epoch durations for comprehensive analysis (duplicates with primary will be automatically removed)"
+            )
+            
+            # Show warning if user selects the same duration in both fields
+            if epoch_duration in epoch_durations:
+                st.warning(f"⚠️ **Note**: {epoch_duration} minute duration is selected in both fields. Duplicates will be automatically removed during analysis.")
+            
+            # Sampling rate (fixed at 10Hz for all files)
+            sampling_rate = 10
+            st.info(f"📊 **Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
         
         # Threshold parameters
-        st.subheader("🎯 Threshold Parameters")
-        
-        # Default threshold is always 0-100 m/s
-        th0_min = 0.0
-        th0_max = 100.0
-        st.info("🎯 **Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
-        
-        th1_min = st.number_input("Threshold 1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1)
-        th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1)
+        with st.expander("🎯 Threshold Parameters", expanded=True):
+            # Default threshold is always 0-100 m/s
+            th0_min = 0.0
+            th0_max = 100.0
+            st.info("🎯 **Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
+            
+            th1_min = st.number_input("Threshold 1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1)
+            th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1)
         
         # Analysis options
-        st.subheader("📊 Analysis Options")
-        
-        batch_mode = st.checkbox("Batch Processing Mode", value=False, help="Enable for multiple files - shows combined analysis and exports only")
-        
-        if batch_mode:
-            st.info("🔄 **Batch Mode**: Individual visualizations disabled. Focus on combined analysis and exports.")
-            include_visualizations = False
-            enhanced_wcs_viz = False
-            include_export = True
-        else:
-            include_visualizations = st.checkbox("Include Visualizations", value=True)
-            enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
-            include_export = st.checkbox("Include Export Options", value=True)
+        with st.expander("📊 Analysis Options", expanded=False):
+            batch_mode = st.checkbox("Batch Processing Mode", value=False, help="Enable for multiple files - shows combined analysis and exports only")
+            
+            if batch_mode:
+                st.info("🔄 **Batch Mode**: Individual visualizations disabled. Focus on combined analysis and exports.")
+                include_visualizations = False
+                enhanced_wcs_viz = False
+                include_export = True
+            else:
+                include_visualizations = st.checkbox("Include Visualizations", value=True)
+                enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
+                include_export = st.checkbox("Include Export Options", value=True)
     
     # Main content area
     if selected_files:
+        # Summary cards at the top
+        st.markdown("### 📊 Analysis Overview")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Files to Process", len(selected_files))
+        with col2:
+            st.metric("Primary Epoch", f"{epoch_duration} min")
+        with col3:
+            st.metric("Additional Epochs", len(epoch_durations))
+        with col4:
+            st.metric("Mode", "Batch" if batch_mode else "Individual")
+        
         st.info(f"🔄 Processing {len(selected_files)} file(s)...")
         
         # Prepare parameters - deduplicate epoch durations to avoid redundant analysis
@@ -217,81 +227,91 @@ def main():
         if len(selected_files) > 1:
             st.success(f"✅ Successfully processed {len(all_results)} out of {len(selected_files)} files")
         
-        # Display individual results if not in batch mode
-        if not batch_mode and all_results:
-            for result in all_results:
-                st.markdown(f"### 📄 Results for {result['file_name']}")
-                # Display file information
-                with st.expander(f"📋 File Information - {result['metadata'].get('player_name', 'Unknown')}"):
-                    st.json(result['metadata'])
-                
-                display_wcs_results(result, result['metadata'], include_visualizations, enhanced_wcs_viz)
-        
-        # Batch mode summary
-        if batch_mode and all_results:
-            st.markdown("### 📊 Batch Processing Summary")
-            display_batch_summary(all_results)
-        
         # Batch processing features
         if all_results:
-            # Export functionality
-            if include_export:
-                st.markdown("### 📤 Export Options")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    if st.button("📊 Export WCS Data to CSV", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
-                        export_path = export_wcs_data_to_csv(all_results)
-                        if export_path:
-                            st.success(f"✅ Data exported successfully!")
-                            st.info(f"📁 File saved to: `{export_path}`")
-                
-                with col2:
-                    if st.button("📋 Download Combined Data", help="Download the combined WCS data as a CSV file"):
-                        combined_df = create_combined_wcs_dataframe(all_results)
-                        if not combined_df.empty:
-                            csv_data = combined_df.to_csv(index=False)
-                            st.download_button(
-                                label="💾 Download CSV",
-                                data=csv_data,
-                                file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                                mime="text/csv"
-                            )
+            # Create tabs for better organization
+            tab1, tab2, tab3 = st.tabs(["📊 Results", "📈 Visualizations", "📤 Export"])
             
-            # Combined visualizations for multiple files
-            if len(all_results) > 1 and (batch_mode or include_visualizations):
-                if batch_mode:
-                    st.markdown("### 📊 Combined Analysis Visualizations")
+            with tab1:
+                st.markdown("### 📋 Analysis Results")
+                # Display individual results if not in batch mode
+                if not batch_mode and all_results:
+                    for result in all_results:
+                        with st.expander(f"📄 {result['file_name']}", expanded=False):
+                            # Display file information
+                            with st.expander(f"📋 File Information - {result['metadata'].get('player_name', 'Unknown')}", expanded=False):
+                                st.json(result['metadata'])
+                            
+                            display_wcs_results(result, result['metadata'], include_visualizations, enhanced_wcs_viz)
+                
+                # Batch mode summary
+                if batch_mode and all_results:
+                    st.markdown("### 📊 Batch Processing Summary")
+                    display_batch_summary(all_results)
+            
+            with tab2:
+                st.markdown("### 📈 Analysis Visualizations")
+                # Combined visualizations for multiple files
+                if len(all_results) > 1 and (batch_mode or include_visualizations):
+                    if batch_mode:
+                        st.markdown("#### 📊 Combined Analysis Visualizations")
+                    else:
+                        st.markdown("#### 📊 Multi-File Comparison Visualizations")
+                    
+                    # Create combined visualizations
+                    combined_viz = create_combined_visualizations(all_results)
+                    
+                    if combined_viz:
+                        # Display each visualization
+                        if 'wcs_distance_distribution' in combined_viz:
+                            st.markdown("#### 📈 WCS Distance Distribution by Epoch")
+                            st.plotly_chart(combined_viz['wcs_distance_distribution'], use_container_width=True)
+                        
+                        if 'mean_wcs_distance_trend' in combined_viz:
+                            st.markdown("#### 📈 Mean WCS Distance vs Epoch Duration")
+                            st.plotly_chart(combined_viz['mean_wcs_distance_trend'], use_container_width=True)
+                        
+                        if 'player_comparison' in combined_viz:
+                            st.markdown("#### 🏃‍♂️ Average WCS Distance by Player")
+                            st.plotly_chart(combined_viz['player_comparison'], use_container_width=True)
+                        
+                        if 'player_epoch_heatmap' in combined_viz:
+                            st.markdown("#### 🔥 WCS Distance Heatmap by Player and Epoch")
+                            st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
+                        
+                        if 'individual_player_grid' in combined_viz:
+                            with st.expander("👤 Individual Player Analysis (Click to expand)", expanded=False):
+                                st.info("📊 **Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
+                                st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
                 else:
-                    st.markdown("### 📊 Multi-File Comparison Visualizations")
-                
-                # Create combined visualizations
-                combined_viz = create_combined_visualizations(all_results)
-                
-                if combined_viz:
-                    # Display each visualization
-                    if 'wcs_distance_distribution' in combined_viz:
-                        st.markdown("#### 📈 WCS Distance Distribution by Epoch")
-                        st.plotly_chart(combined_viz['wcs_distance_distribution'], use_container_width=True)
+                    st.info("📊 Upload multiple files to see combined visualizations")
+            
+            with tab3:
+                st.markdown("### 📤 Export Options")
+                # Export functionality
+                if include_export:
+                    col1, col2 = st.columns(2)
                     
-                    if 'mean_wcs_distance_trend' in combined_viz:
-                        st.markdown("#### 📈 Mean WCS Distance vs Epoch Duration")
-                        st.plotly_chart(combined_viz['mean_wcs_distance_trend'], use_container_width=True)
+                    with col1:
+                        if st.button("📊 Export WCS Data to CSV", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
+                            export_path = export_wcs_data_to_csv(all_results)
+                            if export_path:
+                                st.success(f"✅ Data exported successfully!")
+                                st.info(f"📁 File saved to: `{export_path}`")
                     
-                    if 'player_comparison' in combined_viz:
-                        st.markdown("#### 🏃‍♂️ Average WCS Distance by Player")
-                        st.plotly_chart(combined_viz['player_comparison'], use_container_width=True)
-                    
-                    if 'player_epoch_heatmap' in combined_viz:
-                        st.markdown("#### 🔥 WCS Distance Heatmap by Player and Epoch")
-                        st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
-                    
-                    if 'individual_player_grid' in combined_viz:
-                        with st.expander("👤 Individual Player Analysis (Click to expand)", expanded=False):
-                            st.info("📊 **Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
-                            st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
-                
-                # Batch processing summary table (already shown above in batch mode)
+                    with col2:
+                        if st.button("📋 Download Combined Data", help="Download the combined WCS data as a CSV file"):
+                            combined_df = create_combined_wcs_dataframe(all_results)
+                            if not combined_df.empty:
+                                csv_data = combined_df.to_csv(index=False)
+                                st.download_button(
+                                    label="💾 Download CSV",
+                                    data=csv_data,
+                                    file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                    mime="text/csv"
+                                )
+            
+
     
     else:
         # Welcome message
