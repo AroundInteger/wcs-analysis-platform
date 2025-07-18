@@ -332,15 +332,18 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         th1_min = parameters.get('th1_min', 5.0)
         th1_max = parameters.get('th1_max', 100.0)
         
+        # Log which epoch durations will be analyzed
+        st.info(f"📊 **Analyzing {len(epoch_durations)} epoch duration(s)**: {epoch_durations} minutes")
+        
         wcs_results = []
         
         for epoch_duration in epoch_durations:
-            # Calculate WCS for TH_0 threshold
+            # Calculate WCS for Default threshold
             th0_distance, th0_time, th0_start, th0_end = calculate_wcs_period(
                 velocity_data, epoch_duration, sampling_rate, th0_min, th0_max
             )
             
-            # Calculate WCS for TH_1 threshold
+            # Calculate WCS for Threshold 1
             th1_distance, th1_time, th1_start, th1_end = calculate_wcs_period(
                 velocity_data, epoch_duration, sampling_rate, th1_min, th1_max
             )
@@ -359,6 +362,7 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
             'velocity_stats': velocity_stats,
             'kinematic_stats': kinematic_stats,
             'wcs_results': wcs_results,
+            'epoch_durations': epoch_durations,  # Add epoch durations to results
             'parameters': parameters,
             'metadata': metadata,
             'file_type_info': file_type_info
@@ -428,11 +432,11 @@ def validate_parameters(parameters: Dict[str, Any]) -> bool:
         
         # Validate ranges
         if parameters['th0_min'] >= parameters['th0_max']:
-            st.error("TH_0 minimum must be less than TH_0 maximum")
+            st.error("Default threshold minimum must be less than maximum")
             return False
         
         if parameters['th1_min'] >= parameters['th1_max']:
-            st.error("TH_1 minimum must be less than TH_1 maximum")
+            st.error("Threshold 1 minimum must be less than maximum")
             return False
         
         if parameters['sampling_rate'] <= 0:

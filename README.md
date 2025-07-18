@@ -71,7 +71,10 @@ The app will open in your browser at: **http://localhost:8501**
 - 🔄 **Batch Processing**: Multiple file analysis with folder support
 - ✅ **Multiple File Upload**: Drag and drop support for multiple files simultaneously
 - ✅ **Select All Files**: One-click selection of all CSV files in a folder for batch processing
+- ⚡ **Smart Epoch Deduplication**: Automatic removal of duplicate epoch durations to avoid redundant analysis
 - 🔍 **Debug Information**: Detailed file processing diagnostics and error reporting
+- 📊 **Combined Visualizations**: Multi-file analysis with comprehensive comparison charts
+- 💾 **CSV Export**: Automatic export of all WCS data to OUTPUT folder with timestamped files
 
 ### **Technical Features**
 - **10Hz Processing**: Standard GPS sampling rate support
@@ -95,6 +98,18 @@ Generic      Validation        Acceleration    Peak Detection   Metrics   Images
 ```
 
 ## 🔧 Recent Improvements & Bug Fixes
+
+### **v1.5.0 - Batch Processing & Export Features**
+- ✅ **CSV Export to OUTPUT Folder**: Automatic export of all WCS analysis results to timestamped CSV files
+- ✅ **Combined Visualizations**: Multi-file analysis with comprehensive comparison charts including:
+  - WCS Distance Distribution by Epoch (Box Plot)
+  - Mean WCS Distance vs Epoch Duration (Line Plot)
+  - Average WCS Distance by Player (Bar Chart)
+  - WCS Distance Heatmap by Player and Epoch
+  - Individual Player Analysis Grid
+- ✅ **Batch Processing Module**: New dedicated module for handling multiple files efficiently
+- ✅ **Download Combined Data**: Direct download of combined WCS data as CSV files
+- ✅ **Enhanced Export Options**: Multiple export formats with user-friendly interface
 
 ### **v1.4.0 - Enhanced UI & Visualization Improvements**
 - ✅ **Summary Statistics Tables**: Replaced individual metric displays with clean, organized tables
@@ -154,7 +169,7 @@ The app now presents all statistics in clean, organized tables:
 
 1. **Velocity Statistics**: Max, mean, min velocity and standard deviation
 2. **Kinematic Parameters**: Acceleration, distance, and power metrics
-3. **WCS Analysis Results**: TH_0 and TH_1 distances and durations
+3. **WCS Analysis Results**: Default Threshold and Threshold 1 distances and durations
 4. **Compact Presentation**: All data organized by category for easy comparison
 
 ### **Select All Files Feature**
@@ -197,6 +212,24 @@ This provides deeper insights into movement patterns, performance characteristic
 ### **Folder-based Batch Analysis**
 1. Select "Select from Folder" method
 2. Enter folder path containing CSV files (e.g., `data/test_data`)
+3. Check "Select All Files" to process all CSV files in the folder
+4. Configure WCS parameters and enable export options
+5. View combined visualizations and export data to OUTPUT folder
+
+### **Batch Processing with Export**
+1. Upload multiple files or select from folder
+2. Enable "Include Export Options" in the sidebar
+3. Click "📊 Export WCS Data to CSV" to save all results to OUTPUT folder
+4. Use "📋 Download Combined Data" for immediate CSV download
+5. View comprehensive combined visualizations for multi-file analysis
+
+### **Combined Visualizations**
+When processing multiple files, the app automatically generates:
+- **WCS Distance Distribution**: Box plots showing distance ranges by epoch duration
+- **Mean Distance Trends**: Line plots showing how average distances change with epoch duration
+- **Player Comparisons**: Bar charts comparing average performance across players
+- **Performance Heatmaps**: Color-coded tables showing individual player performance by epoch
+- **Individual Analysis Grid**: Detailed velocity profiles and epoch comparisons for each player
 3. **Use "Select All Files" checkbox** to select all CSV files at once, or manually select specific files
 4. Configure WCS parameters (epoch duration, thresholds)
 5. Enable "Batch Processing Mode" for comparative analysis
@@ -204,7 +237,10 @@ This provides deeper insights into movement patterns, performance characteristic
 
 ### **Custom Analysis**
 1. Configure custom epoch durations (30s, 60s, 90s, etc.)
-2. Set custom velocity thresholds (TH_0, TH_1)
+   - **Primary Epoch Duration**: Main analysis window
+   - **Additional Epoch Durations**: Extra durations for comprehensive analysis
+   - **Smart Deduplication**: Duplicate durations are automatically removed to avoid redundant analysis
+2. Set custom velocity thresholds (Default Threshold: 0-100 m/s, Threshold 1: customizable)
 3. Enable advanced visualizations
 4. Export comprehensive reports
 
@@ -249,10 +285,9 @@ processing:
 analysis:
   default_epoch_duration: 1.0  # minutes
   default_thresholds:
-    th0_min: 0.0
-    th0_max: 100.0
-    th1_min: 5.0
-    th1_max: 100.0
+    # Default threshold is always 0.0 - 100.0 m/s (all velocities)
+th1_min: 5.0
+th1_max: 100.0
 ```
 
 ## 🔧 Troubleshooting

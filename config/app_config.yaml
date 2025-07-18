@@ -23,10 +23,9 @@ analysis:
   default_epoch_duration: 1.0  # minutes
   default_epoch_durations: [0.5, 1.0, 1.5, 2.0, 3.0, 5.0]
   default_thresholds:
-    th0_min: 0.0
-    th0_max: 100.0
-    th1_min: 5.0
-    th1_max: 100.0
+    # Default threshold is always 0.0 - 100.0 m/s (all velocities)
+th1_min: 5.0
+th1_max: 100.0
   
   # WCS algorithm parameters
   wcs:

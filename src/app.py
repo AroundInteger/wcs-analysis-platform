@@ -15,6 +15,7 @@ from typing import Dict, Any, Optional
 from file_ingestion import read_csv_with_metadata, validate_velocity_data
 from wcs_analysis import perform_wcs_analysis
 from visualization import create_velocity_visualization
+from batch_processing import process_batch_files, export_wcs_data_to_csv, create_combined_visualizations, create_combined_wcs_dataframe
 
 
 def main():
@@ -140,18 +141,22 @@ def main():
         
         # Epoch durations
         epoch_duration = st.selectbox(
-            "Epoch Duration (minutes)",
+            "Primary Epoch Duration (minutes)",
             [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
             index=1,  # Default to 1.0 minute
-            help="Duration of the WCS analysis window"
+            help="Primary duration for WCS analysis (will be included in all analyses)"
         )
         
         epoch_durations = st.multiselect(
             "Additional Epoch Durations",
             [0.5, 1.0, 1.5, 2.0, 3.0, 5.0],
-            default=[1.0, 2.0, 5.0],
-            help="Additional epoch durations for comprehensive analysis"
+            default=[2.0, 5.0],  # Removed 1.0 since it's the default primary
+            help="Additional epoch durations for comprehensive analysis (duplicates with primary will be automatically removed)"
         )
+        
+        # Show warning if user selects the same duration in both fields
+        if epoch_duration in epoch_durations:
+            st.warning(f"⚠️ **Note**: {epoch_duration} minute duration is selected in both fields. Duplicates will be automatically removed during analysis.")
         
         # Sampling rate (fixed at 10Hz for all files)
         sampling_rate = 10
@@ -160,96 +165,120 @@ def main():
         # Threshold parameters
         st.subheader("🎯 Threshold Parameters")
         
-        th0_min = st.number_input("TH_0 Min Velocity (m/s)", 0.0, 10.0, 0.0, 0.1)
-        th0_max = st.number_input("TH_0 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1)
+        # Default threshold is always 0-100 m/s
+        th0_min = 0.0
+        th0_max = 100.0
+        st.info("🎯 **Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
         
-        th1_min = st.number_input("TH_1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1)
-        th1_max = st.number_input("TH_1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1)
+        th1_min = st.number_input("Threshold 1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1)
+        th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1)
         
         # Analysis options
         st.subheader("📊 Analysis Options")
         
         include_visualizations = st.checkbox("Include Visualizations", value=True)
+        enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
         include_export = st.checkbox("Include Export Options", value=True)
         batch_mode = st.checkbox("Batch Processing Mode", value=False)
     
     # Main content area
     if selected_files:
         st.info(f"🔄 Processing {len(selected_files)} file(s)...")
-        # Process files
-        all_results = []
         
-        for i, file_input in enumerate(selected_files):
-            try:
-                st.markdown(f"### 📄 Processing File {i+1}/{len(selected_files)}: {os.path.basename(file_input) if isinstance(file_input, str) else file_input.name}")
-                
-                # Progress bar for multiple files
-                if len(selected_files) > 1:
-                    progress = (i + 1) / len(selected_files)
-                    st.progress(progress)
-                
-                # Read file
-                if isinstance(file_input, str):
-                    # File path - pass directly to the function
-                    df, metadata, file_type_info = read_csv_with_metadata(file_input)
-                else:
-                    # Uploaded file
-                    df, metadata, file_type_info = read_csv_with_metadata(file_input)
-                
-                if df is not None and metadata is not None:
-                    # Display file information
-                    with st.expander(f"📋 File Information - {metadata.get('player_name', 'Unknown')}"):
-                        st.json(metadata)
-                        st.info(f"📁 **File Type**: {file_type_info['type'].title()} (Confidence: {file_type_info['confidence']:.1%})")
-                    
-                    # Validate velocity data
-                    if validate_velocity_data(df):
-                        st.success("✅ Velocity data validated successfully")
-                        
-                        # Prepare parameters
-                        parameters = {
-                            'sampling_rate': sampling_rate,
-                            'epoch_duration': epoch_duration,
-                            'epoch_durations': [epoch_duration] + epoch_durations,
-                            'th0_min': th0_min,
-                            'th0_max': th0_max,
-                            'th1_min': th1_min,
-                            'th1_max': th1_max
-                        }
-                        
-                        # Process WCS analysis
-                        with st.spinner("Running WCS analysis..."):
-                            # Pass the already-processed DataFrame to WCS analysis
-                            results = perform_wcs_analysis(df, metadata, file_type_info, parameters)
-                        
-                        if results:
-                            # Display results
-                            display_wcs_results(results, metadata, include_visualizations)
-                            
-                            # Add to batch results
-                            all_results.append({
-                                'file_name': os.path.basename(file_input) if isinstance(file_input, str) else file_input.name,
-                                'results': results,
-                                'metadata': metadata
-                            })
-                        else:
-                            st.error("❌ WCS analysis failed")
-                    else:
-                        st.error("❌ Velocity data validation failed")
-                else:
-                    st.error("❌ Failed to read file")
-                    
-            except Exception as e:
-                st.error(f"❌ Error processing file: {str(e)}")
+        # Prepare parameters - deduplicate epoch durations to avoid redundant analysis
+        all_epoch_durations = [epoch_duration] + epoch_durations
+        unique_epoch_durations = list(dict.fromkeys(all_epoch_durations))  # Preserve order while removing duplicates
+        
+        # Show user which epochs will be analyzed
+        if len(all_epoch_durations) != len(unique_epoch_durations):
+            st.info(f"🔄 **Optimization**: Removed duplicate epoch duration(s). Analyzing: {unique_epoch_durations} minutes")
+        
+        parameters = {
+            'sampling_rate': sampling_rate,
+            'epoch_duration': epoch_duration,
+            'epoch_durations': unique_epoch_durations,
+            'th0_min': th0_min,
+            'th0_max': th0_max,
+            'th1_min': th1_min,
+            'th1_max': th1_max
+        }
+        
+        # Process all files using batch processing
+        all_results = process_batch_files(selected_files, parameters)
         
         # Processing summary
         if len(selected_files) > 1:
             st.success(f"✅ Successfully processed {len(all_results)} out of {len(selected_files)} files")
         
-        # Batch processing summary
-        if batch_mode and all_results:
-            st.markdown("### 📊 Batch Processing Summary")
-            display_batch_summary(all_results)
+        # Display individual results if not in batch mode
+        if not batch_mode and all_results:
+            for result in all_results:
+                st.markdown(f"### 📄 Results for {result['file_name']}")
+                # Display file information
+                with st.expander(f"📋 File Information - {result['metadata'].get('player_name', 'Unknown')}"):
+                    st.json(result['metadata'])
+                
+                display_wcs_results(result, result['metadata'], include_visualizations, enhanced_wcs_viz)
+        
+        # Batch processing features
+        if all_results:
+            # Export functionality
+            if include_export:
+                st.markdown("### 📤 Export Options")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("📊 Export WCS Data to CSV", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
+                        export_path = export_wcs_data_to_csv(all_results)
+                        if export_path:
+                            st.success(f"✅ Data exported successfully!")
+                            st.info(f"📁 File saved to: `{export_path}`")
+                
+                with col2:
+                    if st.button("📋 Download Combined Data", help="Download the combined WCS data as a CSV file"):
+                        combined_df = create_combined_wcs_dataframe(all_results)
+                        if not combined_df.empty:
+                            csv_data = combined_df.to_csv(index=False)
+                            st.download_button(
+                                label="💾 Download CSV",
+                                data=csv_data,
+                                file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv"
+                            )
+            
+            # Combined visualizations for multiple files
+            if len(all_results) > 1:
+                st.markdown("### 📊 Combined Analysis Visualizations")
+                
+                # Create combined visualizations
+                combined_viz = create_combined_visualizations(all_results)
+                
+                if combined_viz:
+                    # Display each visualization
+                    if 'wcs_distance_distribution' in combined_viz:
+                        st.markdown("#### 📈 WCS Distance Distribution by Epoch")
+                        st.plotly_chart(combined_viz['wcs_distance_distribution'], use_container_width=True)
+                    
+                    if 'mean_wcs_distance_trend' in combined_viz:
+                        st.markdown("#### 📈 Mean WCS Distance vs Epoch Duration")
+                        st.plotly_chart(combined_viz['mean_wcs_distance_trend'], use_container_width=True)
+                    
+                    if 'player_comparison' in combined_viz:
+                        st.markdown("#### 🏃‍♂️ Average WCS Distance by Player")
+                        st.plotly_chart(combined_viz['player_comparison'], use_container_width=True)
+                    
+                    if 'player_epoch_heatmap' in combined_viz:
+                        st.markdown("#### 🔥 WCS Distance Heatmap by Player and Epoch")
+                        st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
+                    
+                    if 'individual_player_grid' in combined_viz:
+                        st.markdown("#### 👤 Individual Player Analysis")
+                        st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
+                
+                # Batch processing summary table
+                if batch_mode:
+                    st.markdown("### 📊 Batch Processing Summary")
+                    display_batch_summary(all_results)
     
     else:
         # Welcome message
@@ -290,7 +319,7 @@ def main():
             """)
 
 
-def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], include_visualizations: bool = True):
+def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], include_visualizations: bool = True, enhanced_wcs_viz: bool = True):
     """Display WCS analysis results"""
     
     if not results:
@@ -386,17 +415,20 @@ def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], inclu
         
         # Create WCS results table
         wcs_data = []
-        epoch_names = ['30s', '60s', '90s', '120s', '180s', '300s']
+        
+        # Get epoch durations from the analysis results or use defaults
+        epoch_durations = results.get('epoch_durations', [0.5, 1.0, 1.5, 2.0, 3.0, 5.0])
+        epoch_names = [f"{dur:.1f}min" for dur in epoch_durations]
         
         for i, epoch_name in enumerate(epoch_names):
             if i < len(wcs_results):
                 epoch_data = wcs_results[i]
                 wcs_data.append({
                     'Epoch': epoch_name,
-                    'TH_0 Distance (m)': f"{epoch_data[0] if len(epoch_data) > 0 else 0:.1f}",
-                    'TH_0 Duration (s)': f"{epoch_data[1] if len(epoch_data) > 1 else 0:.1f}",
-                    'TH_1 Distance (m)': f"{epoch_data[4] if len(epoch_data) > 4 else 0:.1f}",
-                    'TH_1 Duration (s)': f"{epoch_data[5] if len(epoch_data) > 5 else 0:.1f}"
+                    'Default Threshold Distance (m)': f"{epoch_data[0] if len(epoch_data) > 0 else 0:.1f}",
+                    'Default Threshold Duration (s)': f"{epoch_data[1] if len(epoch_data) > 1 else 0:.1f}",
+                    'Threshold 1 Distance (m)': f"{epoch_data[4] if len(epoch_data) > 4 else 0:.1f}",
+                    'Threshold 1 Duration (s)': f"{epoch_data[5] if len(epoch_data) > 5 else 0:.1f}"
                 })
         
         if wcs_data:
@@ -407,21 +439,66 @@ def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], inclu
                 hide_index=True,
                 column_config={
                     "Epoch": st.column_config.TextColumn("Epoch", width="small"),
-                    "TH_0 Distance (m)": st.column_config.TextColumn("TH_0 Distance (m)", width="medium"),
-                    "TH_0 Duration (s)": st.column_config.TextColumn("TH_0 Duration (s)", width="medium"),
-                    "TH_1 Distance (m)": st.column_config.TextColumn("TH_1 Distance (m)", width="medium"),
-                    "TH_1 Duration (s)": st.column_config.TextColumn("TH_1 Duration (s)", width="medium")
+                                "Default Threshold Distance (m)": st.column_config.TextColumn("Default Threshold Distance (m)", width="medium"),
+            "Default Threshold Duration (s)": st.column_config.TextColumn("Default Threshold Duration (s)", width="medium"),
+            "Threshold 1 Distance (m)": st.column_config.TextColumn("Threshold 1 Distance (m)", width="medium"),
+            "Threshold 1 Duration (s)": st.column_config.TextColumn("Threshold 1 Duration (s)", width="medium")
                 }
             )
         else:
             st.warning("No WCS results available")
     
-    # Display kinematic visualizations
-    if 'processed_data' in results and include_visualizations:
-        st.markdown("### 📈 Kinematic Analysis Visualizations")
+            # Display enhanced WCS visualizations
+        if 'processed_data' in results and include_visualizations:
+            # Import visualization functions
+            from visualization import create_enhanced_wcs_visualization, create_wcs_period_details, create_kinematic_visualization
+            
+            if enhanced_wcs_viz:
+                st.markdown("### 🔥 Enhanced WCS Analysis Visualizations")
+            
+            # Create enhanced WCS visualization
+            enhanced_wcs_fig = create_enhanced_wcs_visualization(
+                results['processed_data'], 
+                metadata, 
+                results.get('wcs_results', [])
+            )
+            
+            if enhanced_wcs_fig:
+                st.plotly_chart(enhanced_wcs_fig, use_container_width=True)
+            else:
+                st.warning("Could not create enhanced WCS visualization")
+            
+            # Display detailed WCS period information
+            if 'wcs_results' in results and results['wcs_results']:
+                st.markdown("### 📋 Detailed WCS Period Information")
+                
+                # Get epoch durations from the analysis results
+                epoch_durations = results.get('epoch_durations', [0.5, 1.0, 1.5, 2.0, 3.0, 5.0])
+                wcs_details_df = create_wcs_period_details(results['wcs_results'], epoch_durations)
+                
+                if not wcs_details_df.empty:
+                    st.dataframe(
+                        wcs_details_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Epoch": st.column_config.TextColumn("Epoch", width="small"),
+                            "Period": st.column_config.TextColumn("Period", width="small"),
+                            "Distance (m)": st.column_config.TextColumn("Distance (m)", width="medium"),
+                            "Duration (s)": st.column_config.TextColumn("Duration (s)", width="medium"),
+                            "Start Time (s)": st.column_config.TextColumn("Start Time (s)", width="medium"),
+                            "End Time (s)": st.column_config.TextColumn("End Time (s)", width="medium"),
+                            "Avg Velocity (m/s)": st.column_config.TextColumn("Avg Velocity (m/s)", width="medium"),
+                            "Performance Level": st.column_config.TextColumn("Performance Level", width="medium")
+                        }
+                    )
+                else:
+                    st.warning("No detailed WCS period information available")
+        else:
+            st.markdown("### 📈 Standard Kinematic Analysis Visualizations")
         
-        # Import visualization function
-        from visualization import create_kinematic_visualization
+        # Display kinematic visualizations as well
+        st.markdown("### 📈 Kinematic Analysis Visualizations")
         
         # Create kinematic visualization
         kinematic_fig = create_kinematic_visualization(
