@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 """
-WCS Analysis Platform Launcher
+WCS Analysis Platform Launcher - Fixed Version
 """
 
 import os
 import sys
 import subprocess
-import webbrowser
 import time
 from pathlib import Path
 
-# Add src directory to Python path for relative imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+def setup_environment():
+    """Setup the Python environment for the app"""
+    # Get the project root directory
+    project_root = Path(__file__).parent.absolute()
+    src_path = project_root / "src"
+    
+    # Add src directory to Python path
+    if str(src_path) not in sys.path:
+        sys.path.insert(0, str(src_path))
+    
+    print(f"📁 Project root: {project_root}")
+    print(f"📁 Source path: {src_path}")
+    print(f"🐍 Python path updated")
 
 def check_dependencies():
     """Check if required dependencies are installed"""
@@ -36,13 +46,14 @@ def main():
     """Launch the WCS Analysis Platform"""
     
     print("🚀 Launching WCS Analysis Platform...")
-    print(f"📁 Working directory: {os.getcwd()}")
-    print(f"📄 App file: src/app.py")
+    
+    # Setup environment
+    setup_environment()
     
     # Check if we're in the right directory
     if not Path("src/app.py").exists():
         print("❌ Error: src/app.py not found")
-        print("Please run this script from the wcs-analysis-platform directory")
+        print("Please run this script from the wcs-test directory")
         return
     
     # Check dependencies
@@ -54,12 +65,15 @@ def main():
     print("⏹️  Press Ctrl+C to stop the server")
     
     try:
-        # Start Streamlit
+        # Start Streamlit with proper environment
+        env = os.environ.copy()
+        env['PYTHONPATH'] = f"{os.path.join(os.getcwd(), 'src')}:{env.get('PYTHONPATH', '')}"
+        
         subprocess.run([
             sys.executable, "-m", "streamlit", "run", "src/app.py",
             "--server.port", str(port),
             "--server.headless", "true"
-        ])
+        ], env=env)
     except KeyboardInterrupt:
         print("\n👋 WCS Analysis Platform stopped")
     except Exception as e:

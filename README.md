@@ -50,7 +50,14 @@ A professional **Worst Case Scenario (WCS) Analysis Platform** for GPS data proc
 
 3. **Run the application**:
    ```bash
-   python run_app.py
+   # Option 1: Use the shell script (recommended)
+   ./start_app.sh
+   
+   # Option 2: Use the Python launcher
+   python launch_app.py
+   
+   # Option 3: Direct streamlit command
+   PYTHONPATH=src streamlit run src/app.py --server.port 8501
    ```
 
 4. **Access the app**: Open your browser to `http://localhost:8501`

@@ -51,7 +51,14 @@ Welcome to the WCS Analysis Platform! This guide will help you get up and runnin
 
 4. **Launch the application:**
    ```bash
-   python run_app.py
+   # Option 1: Use the shell script (recommended)
+   ./start_app.sh
+   
+   # Option 2: Use the Python launcher
+   python launch_app.py
+   
+   # Option 3: Direct streamlit command
+   PYTHONPATH=src streamlit run src/app.py --server.port 8501
    ```
 
 ## 🎯 First Steps
