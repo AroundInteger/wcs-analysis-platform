@@ -259,15 +259,63 @@ def main():
                 
                 selected_files = uploaded_files if uploaded_files else []
             else:
-                # Folder selection
-                data_folder = st.text_input(
-                    "Data folder path:",
-                    value="data/test_data",
-                    help="Enter the path to your data folder (e.g., data/test_data)"
+                # Enhanced folder selection with navigation
+                st.markdown("**📁 Folder Selection**")
+                
+                # Quick access to common folders
+                common_folders = {
+                    "📂 Project Data": "data",
+                    "📂 Test Data": "data/test_data", 
+                    "📂 Sample Data": "data/sample_data",
+                    "📂 Current Directory": ".",
+                    "📂 Home Directory": os.path.expanduser("~")
+                }
+                
+                # Quick folder selection
+                quick_folder = st.selectbox(
+                    "Quick access to common folders:",
+                    ["Custom path..."] + list(common_folders.keys()),
+                    help="Select a common folder or choose 'Custom path...' to browse"
                 )
                 
+                if quick_folder == "Custom path...":
+                    # Custom path input
+                    data_folder = st.text_input(
+                        "Enter custom folder path:",
+                        value="data/test_data",
+                        help="Enter the full path to your data folder"
+                    )
+                else:
+                    data_folder = common_folders[quick_folder]
+                
+                # Folder navigation and file browsing
                 if data_folder and os.path.exists(data_folder):
+                    # Show current folder info
+                    st.markdown(f"""
+                    <div class="status-badge status-success">
+                        📁 Current folder: {os.path.abspath(data_folder)}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # List subdirectories for navigation
+                    try:
+                        items = os.listdir(data_folder)
+                        subdirs = [item for item in items if os.path.isdir(os.path.join(data_folder, item))]
+                        
+                        if subdirs:
+                            st.markdown("**📂 Available subdirectories:**")
+                            for subdir in sorted(subdirs):
+                                subdir_path = os.path.join(data_folder, subdir)
+                                if st.button(f"📁 {subdir}", key=f"subdir_{subdir}"):
+                                    data_folder = subdir_path
+                                    st.rerun()
+                    
+                    except PermissionError:
+                        st.warning("⚠️ Permission denied accessing some directories")
+                    
+                    # Find CSV files in current folder
                     csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
+                    
                     if csv_files:
                         st.markdown(f"""
                         <div class="status-badge status-success">
@@ -275,30 +323,82 @@ def main():
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Add "Select All" option with better styling
-                        select_all = st.checkbox(
-                            f"📁 Select All Files ({len(csv_files)} files)",
-                            help="Check this to select all CSV files in the folder"
-                        )
+                        # File selection options
+                        col1, col2 = st.columns([1, 1])
+                        
+                        with col1:
+                            # Add "Select All" option with better styling
+                            select_all = st.checkbox(
+                                f"📁 Select All Files ({len(csv_files)} files)",
+                                help="Check this to select all CSV files in the folder"
+                            )
+                        
+                        with col2:
+                            # Show file count
+                            st.info(f"📊 {len(csv_files)} CSV files available")
                         
                         if select_all:
                             # Select all files
                             selected_files = csv_files
-                            st.info(f"✅ All {len(csv_files)} files selected")
+                            st.markdown(f"""
+                            <div class="status-badge status-success">
+                                ✅ All {len(csv_files)} files selected
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
-                            # Manual selection
+                            # Manual selection with file preview
+                            st.markdown("**📄 Select files to analyze:**")
+                            
+                            # Show file list with sizes
+                            file_info = []
+                            for file in sorted(csv_files):
+                                file_path = os.path.join(data_folder, file)
+                                try:
+                                    size = os.path.getsize(file_path)
+                                    size_str = f"{size:,} bytes" if size < 1024*1024 else f"{size/1024/1024:.1f} MB"
+                                    file_info.append(f"📄 {file} ({size_str})")
+                                except:
+                                    file_info.append(f"📄 {file}")
+                            
                             selected_files = st.multiselect(
-                                "Select files to analyze:",
+                                "Choose files:",
                                 csv_files,
-                                help=f"Choose one or more CSV files for analysis (found {len(csv_files)} files)"
+                                help=f"Select one or more CSV files for analysis"
                             )
+                            
+                            # Show selected files
+                            if selected_files:
+                                st.markdown("**✅ Selected files:**")
+                                for file in selected_files:
+                                    st.markdown(f"• {file}")
                         
                         selected_files = [os.path.join(data_folder, f) for f in selected_files]
                     else:
-                        st.warning("No CSV files found in the specified folder")
+                        st.markdown("""
+                        <div class="status-badge status-warning">
+                            ⚠️ No CSV files found in this folder
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Show what files are available
+                        try:
+                            all_files = os.listdir(data_folder)
+                            if all_files:
+                                st.markdown("**📄 Files in this folder:**")
+                                for file in sorted(all_files)[:10]:  # Show first 10 files
+                                    st.markdown(f"• {file}")
+                                if len(all_files) > 10:
+                                    st.markdown(f"*... and {len(all_files) - 10} more files*")
+                        except:
+                            pass
+                        
                         selected_files = []
                 else:
-                    st.warning("Please enter a valid folder path")
+                    st.markdown("""
+                    <div class="status-badge status-error">
+                        ❌ Please enter a valid folder path
+                    </div>
+                    """, unsafe_allow_html=True)
                     selected_files = []
     
     with col2:
