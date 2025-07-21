@@ -30,42 +30,185 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Custom CSS for professional appearance with reduced font sizes
+    # Enhanced CSS for modern, professional appearance
     st.markdown("""
     <style>
+    /* Modern color palette */
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #64748b;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --error-color: #dc2626;
+        --background-light: #f8fafc;
+        --border-color: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+    }
+    
+    /* Main header with gradient */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-align: center;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    
+    /* Enhanced metric cards */
     .metric-card {
-        background-color: #f0f2f6;
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #1f77b4;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
     }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Configuration sections */
+    .config-section {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .config-section:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    /* Enhanced typography */
+    h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    h4 {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Improved data frames */
     .stDataFrame {
         font-size: 0.9rem;
+        border-radius: 8px;
+        overflow: hidden;
     }
+    
+    /* Enhanced metrics */
     .stMetric {
-        font-size: 0.9rem;
-    }
-    h3 {
-        font-size: 1.3rem;
-        margin-bottom: 0.5rem;
-    }
-    h4 {
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-    }
-    .config-section {
-        background-color: #f8f9fa;
+        font-size: 0.95rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e9ecef;
-        margin-bottom: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Progress indicators */
+    .progress-container {
+        background: var(--background-light);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Status badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    
+    .status-error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    
+    /* Responsive design improvements */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+        }
+        
+        .config-section {
+            padding: 1rem;
+        }
+        
+        .metric-card {
+            padding: 1rem;
+        }
+    }
+    
+    /* Loading animations */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: var(--background-light);
+        border-radius: 8px 8px 0 0;
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+        padding: 12px 24px;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-color);
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -74,11 +217,12 @@ def main():
     st.markdown('<h1 class="main-header">🔥 WCS Analysis Platform</h1>', unsafe_allow_html=True)
     st.markdown("### Professional Worst Case Scenario Analysis for GPS Data")
     
-    # Top configuration bar
+    # Enhanced configuration section with better visual hierarchy
+    st.markdown("---")
     st.markdown("### ⚙️ Configuration")
     
-    # Configuration in horizontal layout
-    col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
+    # Configuration in a more balanced layout
+    col1, col2, col3, col4 = st.columns([2.5, 2, 2, 1.5])
     
     with col1:
         with st.expander("📁 Data Input", expanded=True):
@@ -100,11 +244,18 @@ def main():
                     help="Drag and drop multiple CSV files or click to browse. Supports StatSport, Catapult, and Generic GPS formats."
                 )
                 
-                # Debug information
+                # Enhanced file upload feedback
                 if uploaded_files:
-                    st.success(f"✅ {len(uploaded_files)} file(s) uploaded")
-                    for i, file in enumerate(uploaded_files):
-                        st.info(f"📄 {file.name}")
+                    st.markdown(f"""
+                    <div class="status-badge status-success">
+                        ✅ {len(uploaded_files)} file(s) uploaded
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Show uploaded files in a more compact way
+                    file_list = "\n".join([f"• {file.name}" for file in uploaded_files])
+                    with st.expander(f"📄 Uploaded Files ({len(uploaded_files)})", expanded=False):
+                        st.text(file_list)
                 
                 selected_files = uploaded_files if uploaded_files else []
             else:
@@ -118,9 +269,13 @@ def main():
                 if data_folder and os.path.exists(data_folder):
                     csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
                     if csv_files:
-                        st.success(f"✅ Found {len(csv_files)} CSV files")
+                        st.markdown(f"""
+                        <div class="status-badge status-success">
+                            ✅ Found {len(csv_files)} CSV files
+                        </div>
+                        """, unsafe_allow_html=True)
                         
-                        # Add "Select All" option
+                        # Add "Select All" option with better styling
                         select_all = st.checkbox(
                             f"📁 Select All Files ({len(csv_files)} files)",
                             help="Check this to select all CSV files in the folder"
@@ -200,21 +355,62 @@ def main():
     
     # Main content area
     if selected_files:
-        # Summary cards at the top
+        # Enhanced summary cards with better visual design
+        st.markdown("---")
         st.markdown("### 📊 Analysis Overview")
+        
+        # Create metric cards with enhanced styling
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Files to Process", len(selected_files))
-        with col2:
-            st.metric("Primary Epoch", f"{epoch_duration} min")
-        with col3:
-            st.metric("Additional Epochs", len(epoch_durations))
-        with col4:
-            st.metric("Threshold 1 Range", f"{th1_min}-{th1_max} m/s")
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: var(--text-secondary);">Files to Process</h4>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">{len(selected_files)}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Analysis execution
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: var(--text-secondary);">Primary Epoch</h4>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">{epoch_duration} min</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: var(--text-secondary);">Additional Epochs</h4>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">{len(epoch_durations)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: var(--text-secondary);">Threshold 1 Range</h4>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);">{th1_min}-{th1_max} m/s</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Enhanced analysis execution with better progress tracking
+        st.markdown("---")
+        
+        # Analysis button with enhanced styling
         if st.button("🚀 Run WCS Analysis", type="primary", use_container_width=True):
+            # Create a progress container
+            progress_container = st.container()
+            
+            with progress_container:
+                st.markdown("""
+                <div class="progress-container">
+                    <h4 style="margin: 0 0 1rem 0;">🔄 Processing Files</h4>
+                    <div class="loading-spinner"></div>
+                    <span style="margin-left: 0.5rem;">Initializing analysis...</span>
+                </div>
+                """, unsafe_allow_html=True)
+            
             with st.spinner("🔄 Processing files..."):
                 # Process files
                 all_results = []
@@ -228,7 +424,15 @@ def main():
                         # Uploaded file
                         filename = file_path.name
                     
-                    st.info(f"📊 Processing file {i+1}/{len(selected_files)}: {filename}")
+                    # Enhanced file processing feedback
+                    progress_text = f"📊 Processing file {i+1}/{len(selected_files)}: {filename}"
+                    st.markdown(f"""
+                    <div class="progress-container">
+                        <h4 style="margin: 0 0 0.5rem 0;">{progress_text}</h4>
+                        <div class="loading-spinner"></div>
+                        <span style="margin-left: 0.5rem;">Reading data and performing analysis...</span>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                     try:
                         # Read and validate data
@@ -270,14 +474,30 @@ def main():
                             'results': results
                         })
                         
-                        st.success(f"✅ Successfully processed {filename}")
+                        # Enhanced success message
+                        st.markdown(f"""
+                        <div class="status-badge status-success">
+                            ✅ Successfully processed {filename}
+                        </div>
+                        """, unsafe_allow_html=True)
                         
                     except Exception as e:
-                        st.error(f"❌ Error processing {filename}: {str(e)}")
+                        # Enhanced error message
+                        st.markdown(f"""
+                        <div class="status-badge status-error">
+                            ❌ Error processing {filename}: {str(e)}
+                        </div>
+                        """, unsafe_allow_html=True)
                         continue
                 
                 if all_results:
-                    st.success(f"🎉 Analysis complete! Processed {len(all_results)} file(s)")
+                    # Enhanced completion message
+                    st.markdown(f"""
+                    <div class="progress-container" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #059669;">
+                        <h4 style="margin: 0; color: #166534;">🎉 Analysis Complete!</h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #166534; font-weight: 500;">Successfully processed {len(all_results)} file(s)</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                     # Store results in session state
                     st.session_state['all_results'] = all_results
@@ -287,11 +507,20 @@ def main():
                     if batch_mode and len(all_results) > 1:
                         try:
                             export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
-                            st.success(f"✅ **Automatic MATLAB Format Export**: Data exported to Excel with multiple sheets!")
-                            st.info(f"📁 **File saved to**: `{export_path}`")
-                            st.info("💡 **Note**: This Excel file contains WCS Report, Summary Maximum Values, and Binned Data sheets matching your MATLAB workflow format.")
+                            st.markdown(f"""
+                            <div class="progress-container" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-color: #2563eb;">
+                                <h4 style="margin: 0; color: #1e40af;">✅ Automatic MATLAB Format Export</h4>
+                                <p style="margin: 0.5rem 0 0 0; color: #1e40af;">Data exported to Excel with multiple sheets!</p>
+                                <p style="margin: 0.25rem 0 0 0; color: #1e40af; font-size: 0.9rem;"><strong>File saved to:</strong> {export_path}</p>
+                                <p style="margin: 0.25rem 0 0 0; color: #1e40af; font-size: 0.9rem;">💡 This Excel file contains WCS Report, Summary Maximum Values, and Binned Data sheets matching your MATLAB workflow format.</p>
+                            </div>
+                            """, unsafe_allow_html=True)
                         except Exception as e:
-                            st.warning(f"⚠️ Automatic export failed: {str(e)}. You can still export manually using the Export tab.")
+                            st.markdown(f"""
+                            <div class="status-badge status-warning">
+                                ⚠️ Automatic export failed: {str(e)}. You can still export manually using the Export tab.
+                            </div>
+                            """, unsafe_allow_html=True)
                     
                     # Display results based on mode
                     if batch_mode and len(all_results) > 1:
