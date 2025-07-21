@@ -16,6 +16,7 @@ from file_ingestion import read_csv_with_metadata, validate_velocity_data
 from wcs_analysis import perform_wcs_analysis
 from visualization import create_velocity_visualization
 from batch_processing import process_batch_files, export_wcs_data_to_csv, create_combined_visualizations, create_combined_wcs_dataframe
+from data_export import export_data_matlab_format, get_export_formats
 
 
 def main():
@@ -282,6 +283,16 @@ def main():
                     st.session_state['all_results'] = all_results
                     st.session_state['analysis_complete'] = True
                     
+                    # Automatic MATLAB format export for batch mode
+                    if batch_mode and len(all_results) > 1:
+                        try:
+                            export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                            st.success(f"✅ **Automatic MATLAB Format Export**: Data exported to Excel with multiple sheets!")
+                            st.info(f"📁 **File saved to**: `{export_path}`")
+                            st.info("💡 **Note**: This Excel file contains WCS Report, Summary Maximum Values, and Binned Data sheets matching your MATLAB workflow format.")
+                        except Exception as e:
+                            st.warning(f"⚠️ Automatic export failed: {str(e)}. You can still export manually using the Export tab.")
+                    
                     # Display results based on mode
                     if batch_mode and len(all_results) > 1:
                         # Create tabs for better organization
@@ -329,13 +340,49 @@ def main():
                             st.markdown("### 📤 Export Options")
                             # Export functionality
                             if include_export:
+                                st.markdown("#### 🎯 **MATLAB-Compatible Export (Recommended)**")
+                                st.info("💡 **MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
+                                
+                                # MATLAB format export options
+                                col1, col2, col3 = st.columns(3)
+                                
+                                with col1:
+                                    if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
+                                        try:
+                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                                            st.success(f"✅ MATLAB format Excel exported successfully!")
+                                            st.info(f"📁 File saved to: `{export_path}`")
+                                        except Exception as e:
+                                            st.error(f"❌ Export failed: {str(e)}")
+                                
+                                with col2:
+                                    if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
+                                        try:
+                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "csv")
+                                            st.success(f"✅ MATLAB format CSV exported successfully!")
+                                            st.info(f"📁 File saved to: `{export_path}`")
+                                        except Exception as e:
+                                            st.error(f"❌ Export failed: {str(e)}")
+                                
+                                with col3:
+                                    if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
+                                        try:
+                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "json")
+                                            st.success(f"✅ MATLAB format JSON exported successfully!")
+                                            st.info(f"📁 File saved to: `{export_path}`")
+                                        except Exception as e:
+                                            st.error(f"❌ Export failed: {str(e)}")
+                                
+                                st.markdown("---")
+                                st.markdown("#### 📊 **Standard Export Options**")
+                                
                                 col1, col2 = st.columns(2)
                                 
                                 with col1:
-                                    if st.button("📊 Export WCS Data to CSV", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
+                                    if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
                                         export_path = export_wcs_data_to_csv(all_results)
                                         if export_path:
-                                            st.success(f"✅ Data exported successfully!")
+                                            st.success(f"✅ Standard CSV exported successfully!")
                                             st.info(f"📁 File saved to: `{export_path}`")
                                 
                                 with col2:
@@ -409,13 +456,49 @@ def main():
                     st.markdown("### 📤 Export Options")
                     # Export functionality
                     if include_export:
+                        st.markdown("#### 🎯 **MATLAB-Compatible Export (Recommended)**")
+                        st.info("💡 **MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
+                        
+                        # MATLAB format export options
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
+                                try:
+                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                                    st.success(f"✅ MATLAB format Excel exported successfully!")
+                                    st.info(f"📁 File saved to: `{export_path}`")
+                                except Exception as e:
+                                    st.error(f"❌ Export failed: {str(e)}")
+                        
+                        with col2:
+                            if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
+                                try:
+                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "csv")
+                                    st.success(f"✅ MATLAB format CSV exported successfully!")
+                                    st.info(f"📁 File saved to: `{export_path}`")
+                                except Exception as e:
+                                    st.error(f"❌ Export failed: {str(e)}")
+                        
+                        with col3:
+                            if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
+                                try:
+                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "json")
+                                    st.success(f"✅ MATLAB format JSON exported successfully!")
+                                    st.info(f"📁 File saved to: `{export_path}`")
+                                except Exception as e:
+                                    st.error(f"❌ Export failed: {str(e)}")
+                        
+                        st.markdown("---")
+                        st.markdown("#### 📊 **Standard Export Options**")
+                        
                         col1, col2 = st.columns(2)
                         
                         with col1:
-                            if st.button("📊 Export WCS Data to CSV", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
+                            if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
                                 export_path = export_wcs_data_to_csv(all_results)
                                 if export_path:
-                                    st.success(f"✅ Data exported successfully!")
+                                    st.success(f"✅ Standard CSV exported successfully!")
                                     st.info(f"📁 File saved to: `{export_path}`")
                         
                         with col2:

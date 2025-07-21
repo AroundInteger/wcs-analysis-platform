@@ -24,6 +24,7 @@ A professional **Worst Case Scenario (WCS) Analysis Platform** for GPS data proc
 - **Catapult**: Robust parsing with metadata handling
 - **Generic GPS**: Flexible format with customizable column mapping
 - **Batch Processing**: Multiple file upload and folder selection
+- **MATLAB-Compatible Export**: Automatic export in exact MATLAB format with multiple sheets
 
 ### 📈 **Enhanced Visualizations**
 - **Dual WCS Velocity Plot**: Shows both rolling and contiguous WCS periods as scaled curves with **improved layering and visibility**
@@ -227,9 +228,65 @@ A professional **Worst Case Scenario (WCS) Analysis Platform** for GPS data proc
 - **Processing Speed**: Reduce epoch durations for faster analysis
 - **Export Optimization**: Use CSV export for large datasets
 
+## 📤 MATLAB-Compatible Export
+
+### 🎯 **Seamless Integration with Existing Workflows**
+The WCS Analysis Platform now exports data in the **exact format** used by your MATLAB workflow, ensuring complete compatibility with existing analysis pipelines.
+
+### 📊 **Export Formats**
+
+#### **Excel (MATLAB Format) - Recommended**
+- **Multiple Sheets**: WCS Report, Summary Maximum Values, and Binned Data sheets
+- **Exact Column Names**: Matches MATLAB output format precisely
+- **Timestamp Integration**: Proper datetime handling for analysis
+- **Threshold Classification**: TH_0, TH_1 format matching your existing workflow
+
+#### **CSV (MATLAB Format)**
+- **WCS Report Data**: Primary analysis results in CSV format
+- **Compatible Headers**: Column names match MATLAB output
+- **Easy Integration**: Direct import into existing MATLAB scripts
+
+#### **JSON (MATLAB Format)**
+- **Structured Data**: Hierarchical organization of all results
+- **Metadata Included**: Export timestamp, file counts, and analysis parameters
+- **API Integration**: Perfect for automated workflows
+
+### 🔄 **Automatic Export for Batch Mode**
+- **Default Behavior**: When batch processing is enabled, MATLAB format Excel export happens automatically
+- **File Naming**: Follows MATLAB convention with `_checkPython.xlsx` suffix
+- **Output Location**: Saved to `OUTPUT/` folder for easy access
+- **Multiple Sheets**: Excel file contains all analysis components
+
+### 📋 **Sheet Structure (Excel Export)**
+
+#### **1. WCS Report Sheet**
+- **Individual WCS Periods**: Each row represents a WCS analysis period
+- **Columns**: Distance_TH_0, Time_TH_0, Frequency_TH_0, Threshold, PLAYER_METADATA, TimeStamp, Index
+- **Threshold Classification**: TH_0 (Default), TH_1 (Threshold 1)
+- **Timestamp Integration**: Proper datetime conversion from GPS data
+
+#### **2. Summary Maximum Values Sheet**
+- **Maximum Values**: Highest WCS distance for each epoch duration per player
+- **Columns**: PLAYER_METADATA, Epoch, Distance_TH_0, Distance_TH_1
+- **Player Comparison**: Easy comparison across multiple athletes
+
+#### **3. X.X minute Bin Sheets**
+- **Binned Data**: Individual WCS periods grouped by epoch duration
+- **Sheet Names**: "5.0 minute Bin", "10.0 minute Bin", etc.
+- **Detailed Analysis**: Complete breakdown of all WCS periods
+
+### 🎯 **Benefits**
+- **Zero Learning Curve**: Use existing MATLAB analysis scripts without modification
+- **Consistent Results**: Same format, same interpretation, same workflow
+- **Time Savings**: No need to reformat or restructure data
+- **Professional Output**: Publication-ready Excel files with proper formatting
+
 ## 📝 Changelog
 
 ### Latest Updates (Today's Achievements! 🎉)
+- **✅ MATLAB-Compatible Export**: Complete export system matching your existing MATLAB workflow format
+- **✅ Automatic Batch Export**: Default MATLAB format Excel export for batch processing
+- **✅ Multiple Export Formats**: Excel, CSV, and JSON in MATLAB format
 - **✅ Corrected Rolling WCS Implementation**: Fixed thresholding behavior to properly apply velocity thresholds
 - **✅ Enhanced Visualization Layering**: Improved curve visibility with reduced velocity line opacity and increased WCS curve prominence
 - **✅ Consistent Professional Terminology**: Updated all "TH_1" references to "Threshold 1" throughout the application
