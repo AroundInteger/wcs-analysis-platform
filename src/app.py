@@ -323,19 +323,15 @@ def main():
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # File selection options
-                        col1, col2 = st.columns([1, 1])
+                        # File selection options (without nested columns)
+                        # Add "Select All" option with better styling
+                        select_all = st.checkbox(
+                            f"📁 Select All Files ({len(csv_files)} files)",
+                            help="Check this to select all CSV files in the folder"
+                        )
                         
-                        with col1:
-                            # Add "Select All" option with better styling
-                            select_all = st.checkbox(
-                                f"📁 Select All Files ({len(csv_files)} files)",
-                                help="Check this to select all CSV files in the folder"
-                            )
-                        
-                        with col2:
-                            # Show file count
-                            st.info(f"📊 {len(csv_files)} CSV files available")
+                        # Show file count
+                        st.info(f"📊 {len(csv_files)} CSV files available")
                         
                         if select_all:
                             # Select all files
