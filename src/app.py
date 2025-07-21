@@ -17,6 +17,7 @@ from wcs_analysis import perform_wcs_analysis
 from visualization import create_velocity_visualization
 from batch_processing import process_batch_files, export_wcs_data_to_csv, create_combined_visualizations, create_combined_wcs_dataframe
 from data_export import export_data_matlab_format, get_export_formats
+from advanced_analytics import analyze_cohort_performance, create_cohort_report, export_cohort_analysis
 
 
 def get_smart_output_path(input_method: str, data_folder: str = None, uploaded_files = None) -> str:
@@ -718,10 +719,25 @@ def main():
                             </div>
                             """, unsafe_allow_html=True)
                     
+                    # Advanced analytics notification for large batches
+                    if len(all_results) >= 10:
+                        st.markdown(f"""
+                        <div class="progress-container" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
+                            <h4 style="margin: 0; color: #92400e;">🔬 Advanced Analytics Available!</h4>
+                            <p style="margin: 0.5rem 0 0 0; color: #92400e;">With {len(all_results)} files, you now have access to comprehensive cohort analysis!</p>
+                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;">📊 <strong>Features:</strong> Statistical comparisons, performance distributions, outlier detection, and group insights</p>
+                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;">💡 <strong>Access:</strong> Use the "🔬 Advanced Analytics" tab below for detailed cohort analysis</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     # Display results based on mode
                     if batch_mode and len(all_results) > 1:
                         # Create tabs for better organization
-                        tab1, tab2, tab3 = st.tabs(["📊 Results", "📈 Visualizations", "📤 Export"])
+                        if len(all_results) >= 10:
+                            # Advanced analytics for large batches
+                            tab1, tab2, tab3, tab4 = st.tabs(["📊 Results", "📈 Visualizations", "🔬 Advanced Analytics", "📤 Export"])
+                        else:
+                            tab1, tab2, tab3 = st.tabs(["📊 Results", "📈 Visualizations", "📤 Export"])
                         
                         with tab1:
                             st.markdown("### 📋 Analysis Results")
@@ -937,6 +953,11 @@ def main():
                                         file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                                         mime="text/csv"
                                     )
+                        
+                        # Advanced Analytics Tab (only for large batches)
+                        if len(all_results) >= 10:
+                            with tab4:
+                                display_advanced_analytics(all_results, output_path)
             else:
                 # Display individual results
                 for result in all_results:
@@ -978,6 +999,188 @@ def main():
         # Show sample data info
         if os.path.exists("data/test_data"):
             st.info("💡 **Tip**: Sample data is available in the `data/test_data` folder for testing")
+
+
+def display_advanced_analytics(all_results: list, output_path: str):
+    """Display advanced analytics for large batch processing (>10 files)"""
+    
+    st.markdown("### 🔬 Advanced Analytics & Cohort Analysis")
+    st.info("🎯 **Advanced Analytics**: Comprehensive group/cohort analysis for large datasets with statistical comparisons, performance distributions, and insights.")
+    
+    # Check if we have enough data for cohort analysis
+    if len(all_results) < 10:
+        st.warning("⚠️ Advanced analytics require at least 10 files for meaningful cohort analysis")
+        return
+    
+    # Perform cohort analysis
+    with st.spinner("🔬 Performing advanced cohort analysis..."):
+        try:
+            cohort_analysis = analyze_cohort_performance(all_results)
+            
+            if 'error' in cohort_analysis:
+                st.error(f"❌ Cohort analysis failed: {cohort_analysis['error']}")
+                return
+            
+            # Display cohort summary
+            st.markdown("#### 📊 Cohort Performance Summary")
+            summary = cohort_analysis['summary']
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Players", summary['total_players'])
+            with col2:
+                st.metric("Total Observations", summary['total_observations'])
+            with col3:
+                st.metric("Avg Distance", f"{summary['distance_range']['mean']:.1f} m")
+            with col4:
+                st.metric("Distance Range", f"{summary['distance_range']['min']:.1f} - {summary['distance_range']['max']:.1f} m")
+            
+            # Display key insights
+            if summary['insights']:
+                st.markdown("#### 💡 Key Insights")
+                for insight in summary['insights']:
+                    st.info(f"• {insight}")
+            
+            # Display top performers
+            st.markdown("#### 🏆 Top Performers")
+            top_performers_df = pd.DataFrame([
+                {'Player': player, 'Avg Distance (m)': distance}
+                for player, distance in summary['top_performers'].items()
+            ])
+            st.dataframe(top_performers_df, use_container_width=True, hide_index=True)
+            
+            # Display visualizations
+            st.markdown("#### 📈 Advanced Visualizations")
+            
+            if 'visualizations' in cohort_analysis:
+                viz = cohort_analysis['visualizations']
+                
+                # Performance Distribution
+                if 'performance_distribution' in viz:
+                    st.markdown("**Performance Distribution by Player**")
+                    st.plotly_chart(viz['performance_distribution'], use_container_width=True)
+                
+                # Performance Heatmap
+                if 'performance_heatmap' in viz:
+                    st.markdown("**Performance Heatmap (Distance by Player & Epoch)**")
+                    st.plotly_chart(viz['performance_heatmap'], use_container_width=True)
+                
+                # Threshold Comparison
+                if 'threshold_comparison' in viz:
+                    st.markdown("**Performance by Threshold**")
+                    st.plotly_chart(viz['threshold_comparison'], use_container_width=True)
+                
+                # Player Radar Chart
+                if 'player_radar' in viz:
+                    st.markdown("**Player Performance Comparison (Normalized)**")
+                    st.plotly_chart(viz['player_radar'], use_container_width=True)
+                
+                # Performance Scatter
+                if 'performance_scatter' in viz:
+                    st.markdown("**WCS Distance vs Average Velocity**")
+                    st.plotly_chart(viz['performance_scatter'], use_container_width=True)
+            
+            # Display statistical analysis
+            st.markdown("#### 📊 Statistical Analysis")
+            
+            if 'statistics' in cohort_analysis:
+                stats = cohort_analysis['statistics']
+                
+                # Overall statistics
+                if 'overall' in stats:
+                    overall_stats = stats['overall']
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Mean Distance", f"{overall_stats['mean_distance']:.2f} m")
+                    with col2:
+                        st.metric("Std Distance", f"{overall_stats['std_distance']:.2f} m")
+                    with col3:
+                        st.metric("IQR Distance", f"{overall_stats['iqr_distance']:.2f} m")
+                
+                # Player statistics table
+                if 'by_player' in stats:
+                    st.markdown("**Player Statistics**")
+                    player_stats = stats['by_player']
+                    st.dataframe(player_stats, use_container_width=True)
+            
+            # Display rankings
+            st.markdown("#### 🏅 Performance Rankings")
+            
+            if 'rankings' in cohort_analysis:
+                rankings = cohort_analysis['rankings']
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if 'overall' in rankings:
+                        st.markdown("**Overall Performance Ranking**")
+                        overall_rank = rankings['overall'].head(10)
+                        st.dataframe(overall_rank, use_container_width=True, hide_index=True)
+                
+                with col2:
+                    if 'consistency' in rankings:
+                        st.markdown("**Consistency Ranking (Lowest Std Dev)**")
+                        consistency_rank = rankings['consistency'].head(10)
+                        st.dataframe(consistency_rank, use_container_width=True, hide_index=True)
+            
+            # Export options for advanced analytics
+            st.markdown("#### 📤 Export Advanced Analytics")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("📊 Export Cohort Data", help="Export cohort analysis data to CSV"):
+                    try:
+                        exported_files = export_cohort_analysis(cohort_analysis, output_path)
+                        if 'error' not in exported_files:
+                            st.success("✅ Cohort data exported successfully!")
+                            for file_type, file_path in exported_files.items():
+                                st.info(f"📁 {file_type}: {file_path}")
+                        else:
+                            st.error(f"❌ Export failed: {exported_files['error']}")
+                    except Exception as e:
+                        st.error(f"❌ Export failed: {str(e)}")
+            
+            with col2:
+                if st.button("📋 Download Report", help="Download comprehensive cohort analysis report"):
+                    try:
+                        report_text = create_cohort_report(cohort_analysis)
+                        st.download_button(
+                            label="💾 Download Report",
+                            data=report_text,
+                            file_name=f"Cohort_Analysis_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                            mime="text/plain"
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Report generation failed: {str(e)}")
+            
+            with col3:
+                if st.button("📈 Export Visualizations", help="Export all cohort visualizations as HTML"):
+                    try:
+                        # Create a combined HTML file with all visualizations
+                        html_content = "<html><head><title>Cohort Analysis Visualizations</title></head><body>"
+                        html_content += "<h1>Cohort Analysis Visualizations</h1>"
+                        
+                        if 'visualizations' in cohort_analysis:
+                            for viz_name, viz_fig in cohort_analysis['visualizations'].items():
+                                html_content += f"<h2>{viz_name.replace('_', ' ').title()}</h2>"
+                                html_content += viz_fig.to_html(full_html=False)
+                                html_content += "<hr>"
+                        
+                        html_content += "</body></html>"
+                        
+                        st.download_button(
+                            label="💾 Download Visualizations",
+                            data=html_content,
+                            file_name=f"Cohort_Visualizations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                            mime="text/html"
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Visualization export failed: {str(e)}")
+        
+        except Exception as e:
+            st.error(f"❌ Advanced analytics failed: {str(e)}")
+            st.exception(e)
 
 
 def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], include_visualizations: bool = True, enhanced_wcs_viz: bool = True):
