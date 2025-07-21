@@ -24,6 +24,7 @@ A professional **Worst Case Scenario (WCS) Analysis Platform** for GPS data proc
 - **Catapult**: Robust parsing with metadata handling
 - **Generic GPS**: Flexible format with customizable column mapping
 - **Batch Processing**: Multiple file upload and folder selection with smart output organization
+- **Advanced Analytics**: Comprehensive cohort analysis for large datasets (>10 files) with statistical comparisons
 - **MATLAB-Compatible Export**: Automatic export in exact MATLAB format with multiple sheets
 
 ### 📈 **Enhanced Visualizations**
@@ -326,6 +327,7 @@ We welcome contributions! Please see our contributing guidelines for details on:
 ### 📖 **Comprehensive Guides**
 - **[Getting Started Guide](docs/GETTING_STARTED.md)**: Detailed setup and usage instructions
 - **[Batch Processing Guide](docs/BATCH_PROCESSING_GUIDE.md)**: Complete guide to batch processing system
+- **[Advanced Analytics Guide](docs/ADVANCED_ANALYTICS_GUIDE.md)**: Comprehensive cohort analysis for large datasets (>10 files)
 - **[Rolling WCS Theory](ROLLING_WCS_THEORY.md)**: Technical explanation of rolling WCS analysis
 - **[Automated Testing](docs/AUTOMATED_TESTING.md)**: Testing procedures and validation
 
