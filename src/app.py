@@ -252,10 +252,10 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Show uploaded files in a more compact way
+                    # Show uploaded files in a compact list without nested expander
+                    st.markdown("**📄 Uploaded Files:**")
                     file_list = "\n".join([f"• {file.name}" for file in uploaded_files])
-                    with st.expander(f"📄 Uploaded Files ({len(uploaded_files)})", expanded=False):
-                        st.text(file_list)
+                    st.text(file_list)
                 
                 selected_files = uploaded_files if uploaded_files else []
             else:
