@@ -383,15 +383,18 @@ def create_cohort_report(cohort_analysis: Dict[str, Any]) -> str:
     for i, (player, std) in enumerate(summary['most_consistent'].items(), 1):
         report += f"{i}. {player}: ±{std:.2f} m\n"
     
-    if outliers['high_performers'].size > 0:
-        report += "\n## High Performers (Outliers)\n"
-        for player, distance in outliers['high_performers'].items():
-            report += f"- {player}: {distance:.2f} m\n"
-    
-    if outliers['low_performers'].size > 0:
-        report += "\n## Low Performers (Outliers)\n"
-        for player, distance in outliers['low_performers'].items():
-            report += f"- {player}: {distance:.2f} m\n"
+    # Handle outliers (nested structure)
+    if 'outliers' in outliers:
+        outlier_data = outliers['outliers']
+        if 'high_performers' in outlier_data and len(outlier_data['high_performers']) > 0:
+            report += "\n## High Performers (Outliers)\n"
+            for player, distance in outlier_data['high_performers'].items():
+                report += f"- {player}: {distance:.2f} m\n"
+        
+        if 'low_performers' in outlier_data and len(outlier_data['low_performers']) > 0:
+            report += "\n## Low Performers (Outliers)\n"
+            for player, distance in outlier_data['low_performers'].items():
+                report += f"- {player}: {distance:.2f} m\n"
     
     if summary['insights']:
         report += "\n## Key Insights\n"
