@@ -19,6 +19,102 @@ from batch_processing import process_batch_files, export_wcs_data_to_csv, create
 from data_export import export_data_matlab_format, get_export_formats
 
 
+def get_smart_output_path(input_method: str, data_folder: str = None, uploaded_files = None) -> str:
+    """
+    Determine the optimal output path based on input method and user preferences
+    
+    Args:
+        input_method: "Upload File" or "Select from Folder"
+        data_folder: Path to the data folder (if using folder selection)
+        uploaded_files: List of uploaded files (if using file upload)
+    
+    Returns:
+        Path to the output directory
+    """
+    from datetime import datetime
+    
+    # Create timestamp for session organization
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    if input_method == "Select from Folder" and data_folder:
+        # Create OUTPUT folder in the selected data directory
+        output_base = os.path.join(data_folder, "OUTPUT")
+        output_path = os.path.join(output_base, timestamp)
+        
+        # Create the directory structure
+        os.makedirs(output_path, exist_ok=True)
+        
+        return output_path
+    
+    else:
+        # For uploaded files, use project root with session organization
+        output_base = "OUTPUT"
+        output_path = os.path.join(output_base, timestamp)
+        
+        # Create the directory structure
+        os.makedirs(output_path, exist_ok=True)
+        
+        return output_path
+
+
+def display_output_settings(input_method: str, data_folder: str = None) -> str:
+    """
+    Display output settings and allow user to customize output location
+    
+    Args:
+        input_method: Current input method
+        data_folder: Current data folder (if applicable)
+    
+    Returns:
+        Selected output path
+    """
+    st.markdown("### 📁 Output Settings")
+    
+    # Get default output path
+    default_output_path = get_smart_output_path(input_method, data_folder)
+    
+    # Show current output location
+    st.markdown(f"""
+    <div class="status-badge status-success">
+        📁 Default output location: {os.path.abspath(default_output_path)}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Output customization options
+    output_option = st.radio(
+        "Output location:",
+        ["Use default location", "Custom output folder"],
+        help="Choose where to save analysis results"
+    )
+    
+    if output_option == "Custom output folder":
+        custom_output = st.text_input(
+            "Enter custom output folder path:",
+            value=default_output_path,
+            help="Enter the full path where you want to save analysis results"
+        )
+        
+        if custom_output:
+            # Create the custom directory
+            try:
+                os.makedirs(custom_output, exist_ok=True)
+                st.markdown(f"""
+                <div class="status-badge status-success">
+                    ✅ Custom output folder created: {os.path.abspath(custom_output)}
+                </div>
+                """, unsafe_allow_html=True)
+                return custom_output
+            except Exception as e:
+                st.markdown(f"""
+                <div class="status-badge status-error">
+                    ❌ Error creating custom folder: {str(e)}
+                </div>
+                """, unsafe_allow_html=True)
+                return default_output_path
+    else:
+        return default_output_path
+
+
 def main():
     """Main Streamlit application"""
     
@@ -449,6 +545,10 @@ def main():
                 enhanced_wcs_viz = st.checkbox("Enhanced WCS Visualizations", value=True, help="Use new enhanced WCS period visualizations with timeline and intensity maps")
                 include_export = st.checkbox("Include Export Options", value=True)
     
+    # Output settings section
+    st.markdown("---")
+    output_path = display_output_settings(input_method, data_folder if input_method == "Select from Folder" else None)
+    
     # Main content area
     if selected_files:
         # Enhanced summary cards with better visual design
@@ -602,7 +702,7 @@ def main():
                     # Automatic MATLAB format export for batch mode
                     if batch_mode and len(all_results) > 1:
                         try:
-                            export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                            export_path = export_data_matlab_format(all_results, output_path, "xlsx")
                             st.markdown(f"""
                             <div class="progress-container" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-color: #2563eb;">
                                 <h4 style="margin: 0; color: #1e40af;">✅ Automatic MATLAB Format Export</h4>
@@ -674,7 +774,7 @@ def main():
                                 with col1:
                                     if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
                                         try:
-                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                                            export_path = export_data_matlab_format(all_results, output_path, "xlsx")
                                             st.success(f"✅ MATLAB format Excel exported successfully!")
                                             st.info(f"📁 File saved to: `{export_path}`")
                                         except Exception as e:
@@ -683,7 +783,7 @@ def main():
                                 with col2:
                                     if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
                                         try:
-                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "csv")
+                                            export_path = export_data_matlab_format(all_results, output_path, "csv")
                                             st.success(f"✅ MATLAB format CSV exported successfully!")
                                             st.info(f"📁 File saved to: `{export_path}`")
                                         except Exception as e:
@@ -692,7 +792,7 @@ def main():
                                 with col3:
                                     if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
                                         try:
-                                            export_path = export_data_matlab_format(all_results, "OUTPUT", "json")
+                                            export_path = export_data_matlab_format(all_results, output_path, "json")
                                             st.success(f"✅ MATLAB format JSON exported successfully!")
                                             st.info(f"📁 File saved to: `{export_path}`")
                                         except Exception as e:
@@ -704,8 +804,8 @@ def main():
                                 col1, col2 = st.columns(2)
                                 
                                 with col1:
-                                    if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
-                                        export_path = export_wcs_data_to_csv(all_results)
+                                    if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
+                                        export_path = export_wcs_data_to_csv(all_results, output_path)
                                         if export_path:
                                             st.success(f"✅ Standard CSV exported successfully!")
                                             st.info(f"📁 File saved to: `{export_path}`")
@@ -790,7 +890,7 @@ def main():
                         with col1:
                             if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
                                 try:
-                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "xlsx")
+                                    export_path = export_data_matlab_format(all_results, output_path, "xlsx")
                                     st.success(f"✅ MATLAB format Excel exported successfully!")
                                     st.info(f"📁 File saved to: `{export_path}`")
                                 except Exception as e:
@@ -799,7 +899,7 @@ def main():
                         with col2:
                             if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
                                 try:
-                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "csv")
+                                    export_path = export_data_matlab_format(all_results, output_path, "csv")
                                     st.success(f"✅ MATLAB format CSV exported successfully!")
                                     st.info(f"📁 File saved to: `{export_path}`")
                                 except Exception as e:
@@ -808,7 +908,7 @@ def main():
                         with col3:
                             if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
                                 try:
-                                    export_path = export_data_matlab_format(all_results, "OUTPUT", "json")
+                                    export_path = export_data_matlab_format(all_results, output_path, "json")
                                     st.success(f"✅ MATLAB format JSON exported successfully!")
                                     st.info(f"📁 File saved to: `{export_path}`")
                                 except Exception as e:
@@ -820,8 +920,8 @@ def main():
                         col1, col2 = st.columns(2)
                         
                         with col1:
-                            if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file in the OUTPUT folder"):
-                                export_path = export_wcs_data_to_csv(all_results)
+                            if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
+                                export_path = export_wcs_data_to_csv(all_results, output_path)
                                 if export_path:
                                     st.success(f"✅ Standard CSV exported successfully!")
                                     st.info(f"📁 File saved to: `{export_path}`")
