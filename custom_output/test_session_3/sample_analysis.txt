@@ -1,0 +1,2 @@
+Test analysis created at 2025-07-21 18:39:20.525638
+Output path: /Users/rowanbrown/Documents/GitHub/wcs-test/custom_output/test_session_3
