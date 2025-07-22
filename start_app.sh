@@ -21,4 +21,4 @@ echo "🌐 The app will open in your browser at: http://localhost:$PORT"
 echo "⏹️  Press Ctrl+C to stop the server"
 
 # Launch Streamlit with the correct Python path
-PYTHONPATH=src streamlit run src/app.py --server.port $PORT 
+PYTHONPATH=. streamlit run src/app.py --server.port $PORT 

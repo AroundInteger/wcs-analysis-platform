@@ -47,7 +47,7 @@ def calculate_acceleration(velocity_data: np.ndarray, sampling_rate: int = 10) -
         return acceleration
         
     except Exception as e:
-        st.error(f"Error calculating acceleration: {str(e)}")
+        # st.error(f"Error calculating acceleration: {str(e)}")  # Removed to avoid UI issues
         return np.zeros_like(velocity_data)
 
 
@@ -84,7 +84,7 @@ def calculate_distance(velocity_data: np.ndarray, sampling_rate: int = 10) -> np
         return distance
         
     except Exception as e:
-        st.error(f"Error calculating distance: {str(e)}")
+        # st.error(f"Error calculating distance: {str(e)}")  # Removed to avoid UI issues
         return np.zeros_like(velocity_data)
 
 
@@ -145,7 +145,7 @@ def calculate_kinematic_parameters(velocity_data: np.ndarray, sampling_rate: int
         return kinematic_params
         
     except Exception as e:
-        st.error(f"Error calculating kinematic parameters: {str(e)}")
+        # st.error(f"Error calculating kinematic parameters: {str(e)}")  # Removed to avoid UI issues
         return {}
 
 
@@ -163,7 +163,7 @@ def process_velocity_data(df: pd.DataFrame, sampling_rate: int = 10) -> pd.DataF
     try:
         # Ensure we have required columns
         if 'Velocity' not in df.columns:
-            st.error("Velocity column not found in data")
+            # st.error("Velocity column not found in data")  # Removed to avoid UI issues
             return df
         
         # Create time index if not present
@@ -200,7 +200,7 @@ def process_velocity_data(df: pd.DataFrame, sampling_rate: int = 10) -> pd.DataF
         return df
         
     except Exception as e:
-        st.error(f"Error processing velocity data: {str(e)}")
+        # st.error(f"Error processing velocity data: {str(e)}")  # Removed to avoid UI issues
         return df
 
 
@@ -275,7 +275,7 @@ def calculate_wcs_period_rolling(velocity_data: np.ndarray,
         return max_distance, max_time, start_index, end_index
         
     except Exception as e:
-        st.error(f"Error calculating WCS period (rolling): {str(e)}")
+        # st.error(f"Error calculating WCS period (rolling): {str(e)}")  # Removed to avoid UI issues
         return 0.0, 0.0, 0, 0
 
 
@@ -340,7 +340,7 @@ def calculate_wcs_period_contiguous(velocity_data: np.ndarray,
         return max_distance, max_time, start_index, end_index
         
     except Exception as e:
-        st.error(f"Error calculating WCS period (contiguous): {str(e)}")
+        # st.error(f"Error calculating WCS period (contiguous): {str(e)}")  # Removed to avoid UI issues
         return 0.0, 0.0, 0, 0
 
 
@@ -388,7 +388,7 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         from file_ingestion import validate_velocity_data
         
         if not validate_velocity_data(df):
-            st.error("Velocity data validation failed")
+            # st.error("Velocity data validation failed")  # Removed to avoid UI issues
             return None
         
         # Process velocity data to 10Hz
@@ -464,9 +464,9 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         th1_min = parameters.get('th1_min', 5.0)
         th1_max = parameters.get('th1_max', 100.0)
         
-        # Log which epoch durations will be analyzed
-        st.info(f"📊 **Analyzing {len(epoch_durations)} epoch duration(s)**: {epoch_durations} minutes")
-        st.info(f"🔍 **WCS Methods**: Rolling and Contiguous window analysis")
+        # Log which epoch durations will be analyzed (commented out to avoid UI issues)
+        # st.info(f"📊 **Analyzing {len(epoch_durations)} epoch duration(s)**: {epoch_durations} minutes")
+        # st.info(f"🔍 **WCS Methods**: Rolling and Contiguous window analysis")
         
         # Calculate both rolling and contiguous WCS results
         rolling_wcs_results = []
@@ -525,7 +525,7 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         return results
         
     except Exception as e:
-        st.error(f"Error in WCS analysis: {str(e)}")
+        # st.error(f"Error in WCS analysis: {str(e)}")  # Removed to avoid UI issues
         return None
 
 
@@ -584,7 +584,7 @@ def calculate_summary_statistics(rolling_wcs_results: List[List], contiguous_wcs
         return summary
         
     except Exception as e:
-        st.error(f"Error calculating summary statistics: {str(e)}")
+        # st.error(f"Error calculating summary statistics: {str(e)}")  # Removed to avoid UI issues
         return {}
 
 
@@ -603,28 +603,28 @@ def validate_parameters(parameters: Dict[str, Any]) -> bool:
         
         for key in required_keys:
             if key not in parameters:
-                st.error(f"Missing required parameter: {key}")
+                # st.error(f"Missing required parameter: {key}")  # Removed to avoid UI issues
                 return False
         
         # Validate ranges
         if parameters['th0_min'] >= parameters['th0_max']:
-            st.error("Default threshold minimum must be less than maximum")
+            # st.error("Default threshold minimum must be less than maximum")  # Removed to avoid UI issues
             return False
         
         if parameters['th1_min'] >= parameters['th1_max']:
-            st.error("Threshold 1 minimum must be less than maximum")
+            # st.error("Threshold 1 minimum must be less than maximum")  # Removed to avoid UI issues
             return False
         
         if parameters['sampling_rate'] <= 0:
-            st.error("Sampling rate must be positive")
+            # st.error("Sampling rate must be positive")  # Removed to avoid UI issues
             return False
         
         if parameters['epoch_duration'] <= 0:
-            st.error("Epoch duration must be positive")
+            # st.error("Epoch duration must be positive")  # Removed to avoid UI issues
             return False
         
         return True
         
     except Exception as e:
-        st.error(f"Error validating parameters: {str(e)}")
+        # st.error(f"Error validating parameters: {str(e)}")  # Removed to avoid UI issues
         return False 

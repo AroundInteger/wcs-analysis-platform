@@ -173,6 +173,11 @@ def read_catapult_file(uploaded_file) -> Tuple[Optional[pd.DataFrame], Optional[
                     else:
                         # Handle unquoted format: "# Period: Name"
                         metadata['period'] = line.split('Period:')[1].strip()
+                # Check for units in metadata (row 5 typically contains units info)
+                elif 'Speed Units' in line and 'Kilometers' in line:
+                    metadata['velocity_units'] = 'km/hr'
+                elif 'Speed Units' in line and 'Meters' in line:
+                    metadata['velocity_units'] = 'm/s'
         
         # Find data start (look for Timestamp header)
         data_start = 0
@@ -214,6 +219,16 @@ def read_catapult_file(uploaded_file) -> Tuple[Optional[pd.DataFrame], Optional[
         metadata['total_records'] = len(df)
         metadata['duration_minutes'] = df['Seconds'].max() / 60 if 'Seconds' in df.columns else 0
         metadata['analysis_id'] = f"CP_{metadata['player_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Convert velocity units if needed (km/hr to m/s)
+        if 'Velocity' in df.columns and metadata.get('velocity_units') == 'km/hr':
+            # Convert km/hr to m/s: multiply by 5/18 (same as MATLAB)
+            df['Velocity_kmphr'] = df['Velocity']  # Store original values
+            df['Velocity'] = df['Velocity'] * 5/18  # Convert to m/s
+            metadata['velocity_converted'] = True
+            metadata['original_units'] = 'km/hr'
+            metadata['converted_units'] = 'm/s'
+            st.info(f"🔄 Converted velocity from km/hr to m/s (multiplied by 5/18)")
         
         return df, metadata
         
@@ -288,6 +303,11 @@ def read_catapult_file_from_path(file_path: str) -> Tuple[Optional[pd.DataFrame]
                     else:
                         # Handle unquoted format: "# Period: Name"
                         metadata['period'] = line.split('Period:')[1].strip()
+                # Check for units in metadata (row 5 typically contains units info)
+                elif 'Speed Units' in line and 'Kilometers' in line:
+                    metadata['velocity_units'] = 'km/hr'
+                elif 'Speed Units' in line and 'Meters' in line:
+                    metadata['velocity_units'] = 'm/s'
         
         # Find data start (look for Timestamp header)
         data_start = 0
@@ -323,6 +343,16 @@ def read_catapult_file_from_path(file_path: str) -> Tuple[Optional[pd.DataFrame]
         metadata['total_records'] = len(df)
         metadata['duration_minutes'] = df['Seconds'].max() / 60 if 'Seconds' in df.columns else 0
         metadata['analysis_id'] = f"CP_{metadata['player_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Convert velocity units if needed (km/hr to m/s)
+        if 'Velocity' in df.columns and metadata.get('velocity_units') == 'km/hr':
+            # Convert km/hr to m/s: multiply by 5/18 (same as MATLAB)
+            df['Velocity_kmphr'] = df['Velocity']  # Store original values
+            df['Velocity'] = df['Velocity'] * 5/18  # Convert to m/s
+            metadata['velocity_converted'] = True
+            metadata['original_units'] = 'km/hr'
+            metadata['converted_units'] = 'm/s'
+            st.info(f"🔄 Converted velocity from km/hr to m/s (multiplied by 5/18)")
         
         return df, metadata
         
@@ -549,8 +579,19 @@ def validate_velocity_data(df: pd.DataFrame) -> bool:
         
         # Check for reasonable velocity range (0-20 m/s for human movement)
         velocity_range = df['Velocity'].describe()
-        if velocity_range['max'] > 20 or velocity_range['min'] < 0:
-            st.warning("Velocity data contains values outside expected range (0-20 m/s)")
+        max_velocity = velocity_range['max']
+        min_velocity = velocity_range['min']
+        
+        # Check if values are in km/hr range (0-72 km/hr) or m/s range (0-20 m/s)
+        if max_velocity > 72:
+            st.warning(f"Velocity data contains very high values (max: {max_velocity:.2f}). This might indicate units are in km/hr and need conversion.")
+        elif max_velocity > 20 and max_velocity <= 72:
+            st.info(f"Velocity data appears to be in km/hr range (max: {max_velocity:.2f}). Consider checking metadata for unit information.")
+        elif max_velocity > 20:
+            st.warning(f"Velocity data contains values outside expected range (0-20 m/s, max: {max_velocity:.2f})")
+        
+        if min_velocity < 0:
+            st.warning(f"Velocity data contains negative values (min: {min_velocity:.2f})")
         
         # Check for missing data
         missing_count = df['Velocity'].isna().sum()

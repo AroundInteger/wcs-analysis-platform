@@ -36,18 +36,33 @@ def create_matlab_format_export(
     # Create Excel writer
     with pd.ExcelWriter(full_path, engine='openpyxl') as writer:
         
+        sheets_created = 0
+        
         # 1. Create WCS Report Sheet
         wcs_report_df = create_wcs_report_sheet(all_results)
         if not wcs_report_df.empty:
             wcs_report_df.to_excel(writer, sheet_name="WCS Report", index=False)
+            sheets_created += 1
         
         # 2. Create Summary Maximum Values Sheet
         summary_df = create_summary_max_values_sheet(all_results)
         if not summary_df.empty:
             summary_df.to_excel(writer, sheet_name="Summary Maximum Values", index=False)
+            sheets_created += 1
         
         # 3. Create Binned Data Sheets for each epoch
-        create_binned_data_sheets(all_results, writer)
+        binned_sheets_created = create_binned_data_sheets(all_results, writer)
+        sheets_created += binned_sheets_created
+        
+        # 4. If no sheets were created, create a default sheet to prevent Excel error
+        if sheets_created == 0:
+            # Create a simple info sheet
+            info_df = pd.DataFrame({
+                'Info': ['No WCS data available', 'Analysis may have failed', 'Check input files'],
+                'Value': ['', '', '']
+            })
+            info_df.to_excel(writer, sheet_name="Info", index=False)
+            sheets_created += 1
     
     return full_path
 
@@ -284,6 +299,7 @@ def create_binned_data_sheets(all_results: List[Dict[str, Any]], writer: pd.Exce
             })
     
     # Create sheets for each epoch duration
+    sheets_created = 0
     for epoch_duration, data in epoch_groups.items():
         if data:
             df = pd.DataFrame(data)
@@ -299,6 +315,9 @@ def create_binned_data_sheets(all_results: List[Dict[str, Any]], writer: pd.Exce
             # Create sheet name
             sheet_name = f"{epoch_duration:.1f} minute Bin"
             df.to_excel(writer, sheet_name=sheet_name, index=False)
+            sheets_created += 1
+    
+    return sheets_created
 
 
 def export_to_csv_matlab_format(

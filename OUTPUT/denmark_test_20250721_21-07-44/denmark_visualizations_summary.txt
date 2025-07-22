@@ -1,0 +1,18 @@
+🇩🇰 Denmark Data Visualizations Summary
+==================================================
+
+Generated: 2025-07-21 21:35:35
+Players analyzed: 13
+Visualizations created: 4
+
+📊 Visualization Types:
+   • wcs_distance_comparison
+   • velocity_analysis
+   • performance_heatmap
+   • performance_ranking
+
+📁 Files saved: 4
+   • denmark_wcs_distance_comparison_20250721_213535.html
+   • denmark_velocity_analysis_20250721_213535.html
+   • denmark_performance_heatmap_20250721_213535.html
+   • denmark_performance_ranking_20250721_213535.html

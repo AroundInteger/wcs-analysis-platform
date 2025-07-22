@@ -1,1 +1,0 @@
-Sample output structure created

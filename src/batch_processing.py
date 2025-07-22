@@ -10,9 +10,9 @@ import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import streamlit as st
-from file_ingestion import read_csv_with_metadata, validate_velocity_data
-from wcs_analysis import perform_wcs_analysis
-from visualization import create_enhanced_wcs_visualization, create_kinematic_visualization
+from src.file_ingestion import read_csv_with_metadata, validate_velocity_data
+from src.wcs_analysis import perform_wcs_analysis
+from src.visualization import create_enhanced_wcs_visualization, create_kinematic_visualization
 
 
 def process_batch_files(file_inputs: List, parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -290,7 +290,7 @@ def create_combined_visualizations(all_results: List[Dict[str, Any]]) -> Dict[st
             return {}
         
         # Import visualization functions
-        from visualization import (
+        from src.visualization import (
             create_wcs_comparison_chart, 
             create_batch_comparison_chart,
             create_performance_metrics_dashboard

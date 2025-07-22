@@ -12,12 +12,19 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 # Import our modules
-from file_ingestion import read_csv_with_metadata, validate_velocity_data
-from wcs_analysis import perform_wcs_analysis
-from visualization import create_velocity_visualization
-from batch_processing import process_batch_files, export_wcs_data_to_csv, create_combined_visualizations, create_combined_wcs_dataframe
-from data_export import export_data_matlab_format, get_export_formats
-from advanced_analytics import analyze_cohort_performance, create_cohort_report, export_cohort_analysis
+from src.file_ingestion import read_csv_with_metadata, validate_velocity_data
+from src.wcs_analysis import perform_wcs_analysis
+from src.visualization import create_velocity_visualization
+from src.batch_processing import process_batch_files, export_wcs_data_to_csv, create_combined_visualizations, create_combined_wcs_dataframe
+from src.data_export import export_data_matlab_format, get_export_formats
+from src.advanced_analytics import analyze_cohort_performance, create_cohort_report, export_cohort_analysis
+from src.advanced_visualizations import (
+    create_comprehensive_dashboard,
+    create_individual_player_dashboard,
+    create_performance_insights_dashboard,
+    save_dashboard_visualizations
+)
+from src.file_browser import create_simple_folder_picker, get_csv_files_from_folder
 
 
 def get_smart_output_path(input_method: str, data_folder: str = None, uploaded_files = None) -> str:
@@ -69,7 +76,7 @@ def display_output_settings(input_method: str, data_folder: str = None) -> str:
     Returns:
         Selected output path
     """
-    st.markdown("### 📁 Output Settings")
+    st.markdown('<h4 class="subsection-header">Output Settings</h4>', unsafe_allow_html=True)
     
     # Get default output path
     default_output_path = get_smart_output_path(input_method, data_folder)
@@ -122,7 +129,7 @@ def main():
     # Page configuration
     st.set_page_config(
         page_title="WCS Analysis Platform",
-        page_icon="🔥",
+        page_icon="📊",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
@@ -202,6 +209,93 @@ def main():
         font-weight: 500;
         color: var(--text-primary);
         margin-bottom: 0.5rem;
+    }
+    
+    /* Custom subtitle styling for better visibility */
+    .subtitle-header {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #f59e0b !important;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-radius: 8px;
+        border: 2px solid #f59e0b;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    /* Enhanced section headers */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e40af !important;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border-radius: 8px;
+        border-left: 4px solid #2563eb;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    /* Subsection headers */
+    .subsection-header {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #374151 !important;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid #e5e7eb;
+        text-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    }
+    
+    /* Button text wrapping - prevent word splitting */
+    .stButton > button,
+    .stButton > button > div,
+    .stButton > button > span,
+    .stButton > button > p {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        word-break: keep-all !important;
+        overflow-wrap: break-word !important;
+        hyphens: none !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+    }
+    
+    /* Button container styling */
+    .stButton > button {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.5rem 1rem !important;
+    }
+    
+    /* Ensure button text doesn't get cut off */
+    .stButton > button > div {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        word-break: keep-all !important;
+        overflow-wrap: break-word !important;
+        hyphens: none !important;
+        max-width: 100% !important;
+    }
+    
+    /* Override any Streamlit default button text styling */
+    .stButton > button * {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        word-break: keep-all !important;
+        overflow-wrap: break-word !important;
+        hyphens: none !important;
+    }
+    
+    /* Force button text to wrap properly */
+    .stButton > button {
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: keep-all !important;
     }
     
     /* Improved data frames */
@@ -311,12 +405,12 @@ def main():
     """, unsafe_allow_html=True)
     
     # Header
-    st.markdown('<h1 class="main-header">🔥 WCS Analysis Platform</h1>', unsafe_allow_html=True)
-    st.markdown("### Professional Worst Case Scenario Analysis for GPS Data")
+    st.markdown('<h1 class="main-header">WCS Analysis Platform</h1>', unsafe_allow_html=True)
+    st.markdown('<h3 class="subtitle-header">Professional Worst Case Scenario Analysis for GPS Data</h3>', unsafe_allow_html=True)
     
     # Enhanced configuration section with better visual hierarchy
     st.markdown("---")
-    st.markdown("### ⚙️ Configuration")
+    st.markdown('<h3 class="section-header">Configuration</h3>', unsafe_allow_html=True)
     
     # Configuration in a more balanced layout
     col1, col2, col3, col4 = st.columns([2.5, 2, 2, 1.5])
@@ -356,142 +450,40 @@ def main():
                 
                 selected_files = uploaded_files if uploaded_files else []
             else:
-                # Enhanced folder selection with navigation
-                st.markdown("**📁 Folder Selection**")
-                
-                # Quick access to common folders
-                common_folders = {
-                    "📂 Project Data": "data",
-                    "📂 Test Data": "data/test_data", 
-                    "📂 Sample Data": "data/sample_data",
-                    "📂 Current Directory": ".",
-                    "📂 Home Directory": os.path.expanduser("~")
-                }
-                
-                # Quick folder selection
-                quick_folder = st.selectbox(
-                    "Quick access to common folders:",
-                    ["Custom path..."] + list(common_folders.keys()),
-                    help="Select a common folder or choose 'Custom path...' to browse"
+                # Use the new simple folder picker
+                data_folder = create_simple_folder_picker(
+                    title="📁 Select Data Folder",
+                    default_path="data/test_data"
                 )
                 
-                if quick_folder == "Custom path...":
-                    # Custom path input
-                    data_folder = st.text_input(
-                        "Enter custom folder path:",
-                        value="data/test_data",
-                        help="Enter the full path to your data folder"
-                    )
-                else:
-                    data_folder = common_folders[quick_folder]
-                
-                # Folder navigation and file browsing
-                if data_folder and os.path.exists(data_folder):
-                    # Show current folder info
-                    st.markdown(f"""
-                    <div class="status-badge status-success">
-                        📁 Current folder: {os.path.abspath(data_folder)}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # List subdirectories for navigation
-                    try:
-                        items = os.listdir(data_folder)
-                        subdirs = [item for item in items if os.path.isdir(os.path.join(data_folder, item))]
-                        
-                        if subdirs:
-                            st.markdown("**📂 Available subdirectories:**")
-                            for subdir in sorted(subdirs):
-                                subdir_path = os.path.join(data_folder, subdir)
-                                if st.button(f"📁 {subdir}", key=f"subdir_{subdir}"):
-                                    data_folder = subdir_path
-                                    st.rerun()
-                    
-                    except PermissionError:
-                        st.warning("⚠️ Permission denied accessing some directories")
-                    
-                    # Find CSV files in current folder
-                    csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
-                    
-                    if csv_files:
-                        st.markdown(f"""
-                        <div class="status-badge status-success">
-                            ✅ Found {len(csv_files)} CSV files
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # File selection options (without nested columns)
-                        # Add "Select All" option with better styling
-                        select_all = st.checkbox(
-                            f"📁 Select All Files ({len(csv_files)} files)",
-                            help="Check this to select all CSV files in the folder"
-                        )
-                        
-                        # Show file count
-                        st.info(f"📊 {len(csv_files)} CSV files available")
-                        
-                        if select_all:
-                            # Select all files
-                            selected_files = csv_files
-                            st.markdown(f"""
-                            <div class="status-badge status-success">
-                                ✅ All {len(csv_files)} files selected
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            # Manual selection with file preview
-                            st.markdown("**📄 Select files to analyze:**")
-                            
-                            # Show file list with sizes
-                            file_info = []
-                            for file in sorted(csv_files):
-                                file_path = os.path.join(data_folder, file)
-                                try:
-                                    size = os.path.getsize(file_path)
-                                    size_str = f"{size:,} bytes" if size < 1024*1024 else f"{size/1024/1024:.1f} MB"
-                                    file_info.append(f"📄 {file} ({size_str})")
-                                except:
-                                    file_info.append(f"📄 {file}")
-                            
-                            selected_files = st.multiselect(
-                                "Choose files:",
-                                csv_files,
-                                help=f"Select one or more CSV files for analysis"
-                            )
-                            
-                            # Show selected files
-                            if selected_files:
-                                st.markdown("**✅ Selected files:**")
-                                for file in selected_files:
-                                    st.markdown(f"• {file}")
-                        
-                        selected_files = [os.path.join(data_folder, f) for f in selected_files]
+                # Get CSV files from the selected folder
+                if data_folder:
+                    if data_folder == "UPLOADED_FILES":
+                        # Handle uploaded files
+                        selected_files = st.session_state.get('uploaded_files', [])
+                        if selected_files:
+                            st.success(f"✅ Using {len(selected_files)} uploaded files")
                     else:
-                        st.markdown("""
-                        <div class="status-badge status-warning">
-                            ⚠️ No CSV files found in this folder
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Check for selected files in session state (from file explorer)
+                        selected_files_explorer = st.session_state.get('selected_files_explorer', [])
+                        selected_files_quick = st.session_state.get('selected_files_quick', [])
                         
-                        # Show what files are available
-                        try:
-                            all_files = os.listdir(data_folder)
-                            if all_files:
-                                st.markdown("**📄 Files in this folder:**")
-                                for file in sorted(all_files)[:10]:  # Show first 10 files
-                                    st.markdown(f"• {file}")
-                                if len(all_files) > 10:
-                                    st.markdown(f"*... and {len(all_files) - 10} more files*")
-                        except:
-                            pass
-                        
-                        selected_files = []
+                        if selected_files_explorer:
+                            selected_files = selected_files_explorer
+                            st.success(f"✅ Using {len(selected_files)} files selected via file explorer")
+                        elif selected_files_quick:
+                            selected_files = selected_files_quick
+                            st.success(f"✅ Using {len(selected_files)} files selected via quick access")
+                        else:
+                            # Fallback: Get all CSV files from the selected folder
+                            selected_files = get_csv_files_from_folder(data_folder)
+                            
+                            if selected_files:
+                                st.success(f"✅ Found {len(selected_files)} CSV files in {data_folder}")
+                                st.info("💡 **Tip**: Use the file explorer to select specific files for analysis")
+                            else:
+                                st.warning(f"⚠️ No CSV files found in {data_folder}")
                 else:
-                    st.markdown("""
-                    <div class="status-badge status-error">
-                        ❌ Please enter a valid folder path
-                    </div>
-                    """, unsafe_allow_html=True)
                     selected_files = []
     
     with col2:
@@ -517,27 +509,27 @@ def main():
             
             # Sampling rate (fixed at 10Hz for all files)
             sampling_rate = 10
-            st.info(f"📊 **Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
+            st.info(f"**Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
     
     with col3:
-        with st.expander("🎯 Threshold Parameters", expanded=True):
+        with st.expander("Threshold Parameters", expanded=True):
             # Default threshold is always 0-100 m/s
             th0_min = 0.0
             th0_max = 100.0
-            st.info("🎯 **Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
+            st.info("**Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
             
             th1_min = st.number_input("Threshold 1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1, help="Used for contiguous WCS analysis only. Rolling WCS uses all velocities (no thresholding).")
             th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1, help="Used for contiguous WCS analysis only. Rolling WCS uses all velocities (no thresholding).")
     
     with col4:
-        with st.expander("📊 Analysis Options", expanded=True):
+        with st.expander("Analysis Options", expanded=True):
             # Note: WCS Analysis now calculates both rolling and contiguous methods automatically
             st.info("🔄 **Dual WCS Analysis**: Both rolling (accumulated work) and contiguous (best continuous period) methods are calculated automatically")
             
             batch_mode = st.checkbox("Batch Processing Mode", value=False, help="Enable for multiple files - shows combined analysis and exports only")
             
             if batch_mode:
-                st.info("🔄 **Batch Mode**: Individual visualizations disabled. Focus on combined analysis and exports.")
+                st.info("**Batch Mode**: Individual visualizations disabled. Focus on combined analysis and exports.")
                 include_visualizations = False
                 enhanced_wcs_viz = False
                 include_export = True
@@ -554,7 +546,7 @@ def main():
     if selected_files:
         # Enhanced summary cards with better visual design
         st.markdown("---")
-        st.markdown("### 📊 Analysis Overview")
+        st.markdown('<h3 class="section-header">Analysis Overview</h3>', unsafe_allow_html=True)
         
         # Create metric cards with enhanced styling
         col1, col2, col3, col4 = st.columns(4)
@@ -595,7 +587,7 @@ def main():
         st.markdown("---")
         
         # Analysis button with enhanced styling
-        if st.button("🚀 Run WCS Analysis", type="primary", use_container_width=True):
+        if st.button("Run WCS Analysis", type="primary", use_container_width=True):
             # Create a progress container
             progress_container = st.container()
             
@@ -621,15 +613,8 @@ def main():
                         # Uploaded file
                         filename = file_path.name
                     
-                    # Enhanced file processing feedback
-                    progress_text = f"📊 Processing file {i+1}/{len(selected_files)}: {filename}"
-                    st.markdown(f"""
-                    <div class="progress-container">
-                        <h4 style="margin: 0 0 0.5rem 0;">{progress_text}</h4>
-                        <div class="loading-spinner"></div>
-                        <span style="margin-left: 0.5rem;">Reading data and performing analysis...</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Simple file processing feedback
+                    st.write(f"Processing file {i+1}/{len(selected_files)}: {filename}")
                     
                     try:
                         # Read and validate data
@@ -671,30 +656,17 @@ def main():
                             'results': results
                         })
                         
-                        # Enhanced success message
-                        st.markdown(f"""
-                        <div class="status-badge status-success">
-                            ✅ Successfully processed {filename}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Simple success message
+                        st.write(f"✅ Successfully processed {filename}")
                         
                     except Exception as e:
-                        # Enhanced error message
-                        st.markdown(f"""
-                        <div class="status-badge status-error">
-                            ❌ Error processing {filename}: {str(e)}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Simple error message
+                        st.error(f"❌ Error processing {filename}: {str(e)}")
                         continue
                 
                 if all_results:
-                    # Enhanced completion message
-                    st.markdown(f"""
-                    <div class="progress-container" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #059669;">
-                        <h4 style="margin: 0; color: #166534;">🎉 Analysis Complete!</h4>
-                        <p style="margin: 0.5rem 0 0 0; color: #166534; font-weight: 500;">Successfully processed {len(all_results)} file(s)</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Simple completion message
+                    st.success(f"🎉 Analysis Complete! Successfully processed {len(all_results)} file(s)")
                     
                     # Store results in session state
                     st.session_state['all_results'] = all_results
@@ -723,10 +695,10 @@ def main():
                     if len(all_results) >= 10:
                         st.markdown(f"""
                         <div class="progress-container" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
-                            <h4 style="margin: 0; color: #92400e;">🔬 Advanced Analytics Available!</h4>
+                            <h4 style="margin: 0; color: #92400e;">Advanced Analytics Available!</h4>
                             <p style="margin: 0.5rem 0 0 0; color: #92400e;">With {len(all_results)} files, you now have access to comprehensive cohort analysis!</p>
-                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;">📊 <strong>Features:</strong> Statistical comparisons, performance distributions, outlier detection, and group insights</p>
-                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;">💡 <strong>Access:</strong> Use the "🔬 Advanced Analytics" tab below for detailed cohort analysis</p>
+                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;"><strong>Features:</strong> Statistical comparisons, performance distributions, outlier detection, and group insights</p>
+                            <p style="margin: 0.25rem 0 0 0; color: #92400e; font-size: 0.9rem;"><strong>Access:</strong> Use the "Advanced Analytics" tab below for detailed cohort analysis</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -735,19 +707,22 @@ def main():
                         # Create tabs for better organization
                         if len(all_results) >= 10:
                             # Advanced analytics for large batches
-                            tab1, tab2, tab3, tab4 = st.tabs(["📊 Results", "📈 Visualizations", "🔬 Advanced Analytics", "📤 Export"])
+                            tab1, tab2, tab3, tab4, tab5 = st.tabs(["Results", "Visualizations", "Dashboards", "Advanced Analytics", "Export"])
+                        elif len(all_results) >= 5:
+                            # Dashboard analytics for medium batches
+                            tab1, tab2, tab3, tab4 = st.tabs(["Results", "Visualizations", "Dashboards", "Export"])
                         else:
-                            tab1, tab2, tab3 = st.tabs(["📊 Results", "📈 Visualizations", "📤 Export"])
+                            tab1, tab2, tab3 = st.tabs(["Results", "Visualizations", "Export"])
                         
                         with tab1:
-                            st.markdown("### 📋 Analysis Results")
+                            st.markdown('<h4 class="subsection-header">Analysis Results</h4>', unsafe_allow_html=True)
                             display_batch_summary(all_results)
                         
                         with tab2:
-                            st.markdown("### 📈 Analysis Visualizations")
-                            # Combined visualizations for multiple files
+                            st.markdown("### Analysis Visualizations")
+                            # Combined visualizations for multiple files (now for any batch > 1)
                             if len(all_results) > 1:
-                                st.markdown("#### 📊 Combined Analysis Visualizations")
+                                st.markdown("#### Combined Analysis Visualizations")
                                 
                                 # Create combined visualizations
                                 combined_viz = create_combined_visualizations(all_results)
@@ -755,84 +730,84 @@ def main():
                                 if combined_viz:
                                     # Display each visualization
                                     if 'wcs_distance_distribution' in combined_viz:
-                                        st.markdown("#### 📈 WCS Distance Distribution by Epoch")
+                                        st.markdown("#### WCS Distance Distribution by Epoch")
                                         st.plotly_chart(combined_viz['wcs_distance_distribution'], use_container_width=True)
                                     
                                     if 'mean_wcs_distance_trend' in combined_viz:
-                                        st.markdown("#### 📈 Mean WCS Distance vs Epoch Duration")
+                                        st.markdown("#### Mean WCS Distance vs Epoch Duration")
                                         st.plotly_chart(combined_viz['mean_wcs_distance_trend'], use_container_width=True)
                                     
                                     if 'player_comparison' in combined_viz:
-                                        st.markdown("#### 🏃‍♂️ Average WCS Distance by Player")
+                                        st.markdown("#### Average WCS Distance by Player")
                                         st.plotly_chart(combined_viz['player_comparison'], use_container_width=True)
                                     
                                     if 'player_epoch_heatmap' in combined_viz:
-                                        st.markdown("#### 🔥 WCS Distance Heatmap by Player and Epoch")
+                                        st.markdown("#### WCS Distance Heatmap by Player and Epoch")
                                         st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
                                     
                                     if 'individual_player_grid' in combined_viz:
-                                        st.markdown("#### 👤 Individual Player Analysis")
-                                        st.info("📊 **Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
+                                        st.markdown("#### Individual Player Analysis")
+                                        st.info("**Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
                                         st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
                             else:
-                                st.info("📊 Upload multiple files to see combined visualizations")
+                                st.info("Upload multiple files to see combined visualizations")
                         
                         with tab3:
-                            st.markdown("### 📤 Export Options")
+                            st.markdown("### Export Options")
                             # Export functionality
                             if include_export:
-                                st.markdown("#### 🎯 **MATLAB-Compatible Export (Recommended)**")
-                                st.info("💡 **MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
+                                st.markdown("#### **MATLAB-Compatible Export (Recommended)**")
+                                st.info("**MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
                                 
                                 # MATLAB format export options
                                 col1, col2, col3 = st.columns(3)
                                 
                                 with col1:
-                                    if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
+                                    if st.button("Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
                                         try:
                                             export_path = export_data_matlab_format(all_results, output_path, "xlsx")
-                                            st.success(f"✅ MATLAB format Excel exported successfully!")
-                                            st.info(f"📁 File saved to: `{export_path}`")
+                                            st.success("MATLAB format Excel exported successfully!")
+                                            st.info(f"File saved to: `{export_path}`")
                                         except Exception as e:
-                                            st.error(f"❌ Export failed: {str(e)}")
+                                            st.error(f"Export failed: {str(e)}")
                                 
                                 with col2:
-                                    if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
+                                    if st.button("CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
                                         try:
                                             export_path = export_data_matlab_format(all_results, output_path, "csv")
-                                            st.success(f"✅ MATLAB format CSV exported successfully!")
-                                            st.info(f"📁 File saved to: `{export_path}`")
+                                            st.success("MATLAB format CSV exported successfully!")
+                                            st.info(f"File saved to: `{export_path}`")
                                         except Exception as e:
-                                            st.error(f"❌ Export failed: {str(e)}")
+                                            st.error(f"Export failed: {str(e)}")
                                 
                                 with col3:
-                                    if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
+                                    if st.button("JSON (MATLAB Format)", help="Export to JSON with structured data"):
                                         try:
                                             export_path = export_data_matlab_format(all_results, output_path, "json")
-                                            st.success(f"✅ MATLAB format JSON exported successfully!")
-                                            st.info(f"📁 File saved to: `{export_path}`")
+                                            st.success("MATLAB format JSON exported successfully!")
+                                            st.info(f"File saved to: `{export_path}`")
                                         except Exception as e:
-                                            st.error(f"❌ Export failed: {str(e)}")
+                                            st.error(f"Export failed: {str(e)}")
                                 
                                 st.markdown("---")
-                                st.markdown("#### 📊 **Standard Export Options**")
+                                st.markdown("#### **Standard Export Options**")
                                 
                                 col1, col2 = st.columns(2)
                                 
                                 with col1:
-                                    if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
+                                    if st.button("Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
                                         export_path = export_wcs_data_to_csv(all_results, output_path)
                                         if export_path:
-                                            st.success(f"✅ Standard CSV exported successfully!")
-                                            st.info(f"📁 File saved to: `{export_path}`")
+                                            st.success(f"Standard CSV exported successfully!")
+                                            st.info(f"File saved to: `{export_path}`")
                                 
                                 with col2:
-                                    if st.button("📋 Download Combined Data", help="Download the combined WCS data as a CSV file"):
+                                    if st.button("Download Combined Data", help="Download the combined WCS data as a CSV file"):
                                         combined_df = create_combined_wcs_dataframe(all_results)
                                         if not combined_df.empty:
                                             csv_data = combined_df.to_csv(index=False)
                                             st.download_button(
-                                                label="💾 Download CSV",
+                                                label="Download CSV",
                                                 data=csv_data,
                                                 file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                                                 mime="text/csv"
@@ -848,22 +823,29 @@ def main():
     elif st.session_state.get('analysis_complete', False):
         all_results = st.session_state.get('all_results', [])
         if all_results:
-            st.success("📊 Previous analysis results found")
+            st.success("Previous analysis results found")
             
             # Display results based on mode
             if batch_mode and len(all_results) > 1:
                 # Create tabs for better organization
-                tab1, tab2, tab3 = st.tabs(["📊 Results", "📈 Visualizations", "📤 Export"])
+                if len(all_results) >= 10:
+                    # Advanced analytics for large batches
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Results", "Visualizations", "Dashboards", "Advanced Analytics", "Export"])
+                elif len(all_results) >= 5:
+                    # Dashboard analytics for medium batches
+                    tab1, tab2, tab3, tab4 = st.tabs(["Results", "Visualizations", "Dashboards", "Export"])
+                else:
+                    tab1, tab2, tab3 = st.tabs(["Results", "Visualizations", "Export"])
                 
                 with tab1:
-                    st.markdown("### 📋 Analysis Results")
+                    st.markdown('<h4 class="subsection-header">Analysis Results</h4>', unsafe_allow_html=True)
                     display_batch_summary(all_results)
                 
                 with tab2:
-                    st.markdown("### 📈 Analysis Visualizations")
+                    st.markdown("### Analysis Visualizations")
                     # Combined visualizations for multiple files
                     if len(all_results) > 1:
-                        st.markdown("#### 📊 Combined Analysis Visualizations")
+                        st.markdown("#### Combined Analysis Visualizations")
                         
                         # Create combined visualizations
                         combined_viz = create_combined_visualizations(all_results)
@@ -871,93 +853,98 @@ def main():
                         if combined_viz:
                             # Display each visualization
                             if 'wcs_distance_distribution' in combined_viz:
-                                st.markdown("#### 📈 WCS Distance Distribution by Epoch")
+                                st.markdown("#### WCS Distance Distribution by Epoch")
                                 st.plotly_chart(combined_viz['wcs_distance_distribution'], use_container_width=True)
                             
                             if 'mean_wcs_distance_trend' in combined_viz:
-                                st.markdown("#### 📈 Mean WCS Distance vs Epoch Duration")
+                                st.markdown("#### Mean WCS Distance vs Epoch Duration")
                                 st.plotly_chart(combined_viz['mean_wcs_distance_trend'], use_container_width=True)
                             
                             if 'player_comparison' in combined_viz:
-                                st.markdown("#### 🏃‍♂️ Average WCS Distance by Player")
+                                st.markdown("#### Average WCS Distance by Player")
                                 st.plotly_chart(combined_viz['player_comparison'], use_container_width=True)
                             
                             if 'player_epoch_heatmap' in combined_viz:
-                                st.markdown("#### 🔥 WCS Distance Heatmap by Player and Epoch")
+                                st.markdown("#### WCS Distance Heatmap by Player and Epoch")
                                 st.plotly_chart(combined_viz['player_epoch_heatmap'], use_container_width=True)
                             
                             if 'individual_player_grid' in combined_viz:
-                                st.markdown("#### 👤 Individual Player Analysis")
-                                st.info("📊 **Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
+                                st.markdown("#### Individual Player Analysis")
+                                st.info("**Note**: Showing analysis for the first 3 players only to prevent overlapping. Use the heatmap above for all players.")
                                 st.plotly_chart(combined_viz['individual_player_grid'], use_container_width=True)
                     else:
-                        st.info("📊 Upload multiple files to see combined visualizations")
+                        st.info("Upload multiple files to see combined visualizations")
                 
                 with tab3:
-                    st.markdown("### 📤 Export Options")
+                    st.markdown("### Export Options")
                     # Export functionality
                     if include_export:
-                        st.markdown("#### 🎯 **MATLAB-Compatible Export (Recommended)**")
-                        st.info("💡 **MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
+                        st.markdown("#### **MATLAB-Compatible Export (Recommended)**")
+                        st.info("**MATLAB Format**: Exports data in the exact format used by your existing MATLAB workflow, including WCS Report, Summary Maximum Values, and Binned Data sheets.")
                         
                         # MATLAB format export options
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
-                            if st.button("📊 Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
+                            if st.button("Excel (MATLAB Format)", help="Export to Excel with multiple sheets matching MATLAB output"):
                                 try:
                                     export_path = export_data_matlab_format(all_results, output_path, "xlsx")
-                                    st.success(f"✅ MATLAB format Excel exported successfully!")
-                                    st.info(f"📁 File saved to: `{export_path}`")
+                                    st.success(f"MATLAB format Excel exported successfully!")
+                                    st.info(f"File saved to: `{export_path}`")
                                 except Exception as e:
-                                    st.error(f"❌ Export failed: {str(e)}")
+                                    st.error(f"Export failed: {str(e)}")
                         
                         with col2:
-                            if st.button("📄 CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
+                            if st.button("CSV (MATLAB Format)", help="Export WCS Report to CSV in MATLAB format"):
                                 try:
                                     export_path = export_data_matlab_format(all_results, output_path, "csv")
-                                    st.success(f"✅ MATLAB format CSV exported successfully!")
-                                    st.info(f"📁 File saved to: `{export_path}`")
+                                    st.success(f"MATLAB format CSV exported successfully!")
+                                    st.info(f"File saved to: `{export_path}`")
                                 except Exception as e:
-                                    st.error(f"❌ Export failed: {str(e)}")
+                                    st.error(f"Export failed: {str(e)}")
                         
                         with col3:
-                            if st.button("📋 JSON (MATLAB Format)", help="Export to JSON with structured data"):
+                            if st.button("JSON (MATLAB Format)", help="Export to JSON with structured data"):
                                 try:
                                     export_path = export_data_matlab_format(all_results, output_path, "json")
-                                    st.success(f"✅ MATLAB format JSON exported successfully!")
-                                    st.info(f"📁 File saved to: `{export_path}`")
+                                    st.success(f"MATLAB format JSON exported successfully!")
+                                    st.info(f"File saved to: `{export_path}`")
                                 except Exception as e:
-                                    st.error(f"❌ Export failed: {str(e)}")
+                                    st.error(f"Export failed: {str(e)}")
                         
                         st.markdown("---")
-                        st.markdown("#### 📊 **Standard Export Options**")
+                        st.markdown("#### **Standard Export Options**")
                         
                         col1, col2 = st.columns(2)
                         
                         with col1:
-                            if st.button("📊 Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
+                            if st.button("Standard CSV Export", help="Export all WCS analysis results to a CSV file"):
                                 export_path = export_wcs_data_to_csv(all_results, output_path)
                                 if export_path:
-                                    st.success(f"✅ Standard CSV exported successfully!")
-                                    st.info(f"📁 File saved to: `{export_path}`")
+                                    st.success(f"Standard CSV exported successfully!")
+                                    st.info(f"File saved to: `{export_path}`")
                         
                         with col2:
-                            if st.button("📋 Download Combined Data", help="Download the combined WCS data as a CSV file"):
+                            if st.button("Download Combined Data", help="Download the combined WCS data as a CSV file"):
                                 combined_df = create_combined_wcs_dataframe(all_results)
                                 if not combined_df.empty:
                                     csv_data = combined_df.to_csv(index=False)
                                     st.download_button(
-                                        label="💾 Download CSV",
+                                        label="Download CSV",
                                         data=csv_data,
                                         file_name=f"WCS_Analysis_Results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                                         mime="text/csv"
                                     )
-                        
-                        # Advanced Analytics Tab (only for large batches)
-                        if len(all_results) >= 10:
-                            with tab4:
-                                display_advanced_analytics(all_results, output_path)
+                
+                # Dashboard Tab (for 5+ files)
+                if len(all_results) >= 5:
+                    with tab3:
+                        display_dashboard_visualizations(all_results, output_path)
+                
+                # Advanced Analytics Tab (only for large batches)
+                if len(all_results) >= 10:
+                    with tab4:
+                        display_advanced_analytics(all_results, output_path)
             else:
                 # Display individual results
                 for result in all_results:
@@ -966,7 +953,7 @@ def main():
     # Instructions when no files are selected
     else:
         st.markdown("---")
-        st.markdown("### 📋 Getting Started")
+        st.markdown('<h4 class="subsection-header">Getting Started</h4>', unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
@@ -1001,516 +988,410 @@ def main():
             st.info("💡 **Tip**: Sample data is available in the `data/test_data` folder for testing")
 
 
-def display_advanced_analytics(all_results: list, output_path: str):
-    """Display advanced analytics for large batch processing (>10 files)"""
+def display_dashboard_visualizations(all_results: list, output_path: str):
+    """Display advanced dashboard visualizations for batch processing (5+ files)"""
     
-    st.markdown("### 🔬 Advanced Analytics & Cohort Analysis")
-    st.info("🎯 **Advanced Analytics**: Comprehensive group/cohort analysis for large datasets with statistical comparisons, performance distributions, and insights.")
+    st.markdown("### Advanced Dashboard Visualizations")
+    st.info("**Professional Dashboards**: Comprehensive multi-panel visualizations providing insights across all players and epochs in a single view.")
     
-    # Check if we have enough data for cohort analysis
-    if len(all_results) < 10:
-        st.warning("⚠️ Advanced analytics require at least 10 files for meaningful cohort analysis")
+    # Check if we have enough data for dashboard analysis
+    if len(all_results) < 5:
+        st.warning("Dashboard visualizations require at least 5 files for meaningful analysis")
         return
     
-    # Perform cohort analysis
-    with st.spinner("🔬 Performing advanced cohort analysis..."):
+    # Dashboard selection
+    st.markdown("#### Choose Dashboard Type")
+    
+    dashboard_type = st.selectbox(
+        "Select Dashboard:",
+        ["Comprehensive Overview", "Individual Players", "Performance Insights"],
+        help="Choose the type of dashboard visualization to display"
+    )
+    
+    # Smart recommendation
+    if len(all_results) >= 10:
+        st.success("**Recommended**: Comprehensive Overview (best for large datasets)")
+    elif len(all_results) >= 7:
+        st.info("**Recommended**: Individual Players (good for medium datasets)")
+    else:
+        st.info("**Recommended**: Performance Insights (ideal for smaller datasets)")
+    
+    # Create and display selected dashboard
+    with st.spinner(f"Creating {dashboard_type} dashboard..."):
         try:
-            cohort_analysis = analyze_cohort_performance(all_results)
+            if dashboard_type == "Comprehensive Overview":
+                fig = create_comprehensive_dashboard(all_results, "WCS Analysis - Comprehensive Dashboard")
+            elif dashboard_type == "Individual Players":
+                max_players = min(5, len(all_results))
+                fig = create_individual_player_dashboard(all_results, max_players)
+            else:  # Performance Insights
+                fig = create_performance_insights_dashboard(all_results)
             
-            if 'error' in cohort_analysis:
-                st.error(f"❌ Cohort analysis failed: {cohort_analysis['error']}")
-                return
-            
-            # Display cohort summary
-            st.markdown("#### 📊 Cohort Performance Summary")
-            summary = cohort_analysis['summary']
-            
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Total Players", summary['total_players'])
-            with col2:
-                st.metric("Total Observations", summary['total_observations'])
-            with col3:
-                st.metric("Avg Distance", f"{summary['distance_range']['mean']:.1f} m")
-            with col4:
-                st.metric("Distance Range", f"{summary['distance_range']['min']:.1f} - {summary['distance_range']['max']:.1f} m")
-            
-            # Display key insights
-            if summary['insights']:
-                st.markdown("#### 💡 Key Insights")
-                for insight in summary['insights']:
-                    st.info(f"• {insight}")
-            
-            # Display top performers
-            st.markdown("#### 🏆 Top Performers")
-            top_performers_df = pd.DataFrame([
-                {'Player': player, 'Avg Distance (m)': distance}
-                for player, distance in summary['top_performers'].items()
-            ])
-            st.dataframe(top_performers_df, use_container_width=True, hide_index=True)
-            
-            # Display visualizations
-            st.markdown("#### 📈 Advanced Visualizations")
-            
-            if 'visualizations' in cohort_analysis:
-                viz = cohort_analysis['visualizations']
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
                 
-                # Performance Distribution
-                if 'performance_distribution' in viz:
-                    st.markdown("**Performance Distribution by Player**")
-                    st.plotly_chart(viz['performance_distribution'], use_container_width=True)
-                
-                # Performance Heatmap
-                if 'performance_heatmap' in viz:
-                    st.markdown("**Performance Heatmap (Distance by Player & Epoch)**")
-                    st.plotly_chart(viz['performance_heatmap'], use_container_width=True)
-                
-                # Threshold Comparison
-                if 'threshold_comparison' in viz:
-                    st.markdown("**Performance by Threshold**")
-                    st.plotly_chart(viz['threshold_comparison'], use_container_width=True)
-                
-                # Player Radar Chart
-                if 'player_radar' in viz:
-                    st.markdown("**Player Performance Comparison (Normalized)**")
-                    st.plotly_chart(viz['player_radar'], use_container_width=True)
-                
-                # Performance Scatter
-                if 'performance_scatter' in viz:
-                    st.markdown("**WCS Distance vs Average Velocity**")
-                    st.plotly_chart(viz['performance_scatter'], use_container_width=True)
-            
-            # Display statistical analysis
-            st.markdown("#### 📊 Statistical Analysis")
-            
-            if 'statistics' in cohort_analysis:
-                stats = cohort_analysis['statistics']
-                
-                # Overall statistics
-                if 'overall' in stats:
-                    overall_stats = stats['overall']
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Mean Distance", f"{overall_stats['mean_distance']:.2f} m")
-                    with col2:
-                        st.metric("Std Distance", f"{overall_stats['std_distance']:.2f} m")
-                    with col3:
-                        st.metric("IQR Distance", f"{overall_stats['iqr_distance']:.2f} m")
-                
-                # Player statistics table
-                if 'by_player' in stats:
-                    st.markdown("**Player Statistics**")
-                    player_stats = stats['by_player']
-                    st.dataframe(player_stats, use_container_width=True)
-            
-            # Display rankings
-            st.markdown("#### 🏅 Performance Rankings")
-            
-            if 'rankings' in cohort_analysis:
-                rankings = cohort_analysis['rankings']
+                # Dashboard export options
+                st.markdown("---")
+                st.markdown("#### Export Dashboard")
                 
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    if 'overall' in rankings:
-                        st.markdown("**Overall Performance Ranking**")
-                        overall_rank = rankings['overall'].head(10)
-                        st.dataframe(overall_rank, use_container_width=True, hide_index=True)
+                    if st.button("Export as HTML", help="Export dashboard as interactive HTML file"):
+                        try:
+                            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                            filename = f"dashboard_{dashboard_type.lower().replace(' ', '_')}_{timestamp}.html"
+                            filepath = os.path.join(output_path, filename)
+                            fig.write_html(filepath)
+                            st.success("Dashboard exported successfully!")
+                            st.info(f"File saved to: `{filepath}`")
+                        except Exception as e:
+                            st.error(f"Export failed: {str(e)}")
                 
                 with col2:
-                    if 'consistency' in rankings:
-                        st.markdown("**Consistency Ranking (Lowest Std Dev)**")
-                        consistency_rank = rankings['consistency'].head(10)
-                        st.dataframe(consistency_rank, use_container_width=True, hide_index=True)
-            
-            # Export options for advanced analytics
-            st.markdown("#### 📤 Export Advanced Analytics")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if st.button("📊 Export Cohort Data", help="Export cohort analysis data to CSV"):
-                    try:
-                        exported_files = export_cohort_analysis(cohort_analysis, output_path)
-                        if 'error' not in exported_files:
-                            st.success("✅ Cohort data exported successfully!")
-                            for file_type, file_path in exported_files.items():
-                                st.info(f"📁 {file_type}: {file_path}")
-                        else:
-                            st.error(f"❌ Export failed: {exported_files['error']}")
-                    except Exception as e:
-                        st.error(f"❌ Export failed: {str(e)}")
-            
-            with col2:
-                if st.button("📋 Download Report", help="Download comprehensive cohort analysis report"):
-                    try:
-                        report_text = create_cohort_report(cohort_analysis)
-                        st.download_button(
-                            label="💾 Download Report",
-                            data=report_text,
-                            file_name=f"Cohort_Analysis_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                            mime="text/plain"
-                        )
-                    except Exception as e:
-                        st.error(f"❌ Report generation failed: {str(e)}")
-            
-            with col3:
-                if st.button("📈 Export Visualizations", help="Export all cohort visualizations as HTML"):
-                    try:
-                        # Create a combined HTML file with all visualizations
-                        html_content = "<html><head><title>Cohort Analysis Visualizations</title></head><body>"
-                        html_content += "<h1>Cohort Analysis Visualizations</h1>"
-                        
-                        if 'visualizations' in cohort_analysis:
-                            for viz_name, viz_fig in cohort_analysis['visualizations'].items():
-                                html_content += f"<h2>{viz_name.replace('_', ' ').title()}</h2>"
-                                html_content += viz_fig.to_html(full_html=False)
-                                html_content += "<hr>"
-                        
-                        html_content += "</body></html>"
-                        
-                        st.download_button(
-                            label="💾 Download Visualizations",
-                            data=html_content,
-                            file_name=f"Cohort_Visualizations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                            mime="text/html"
-                        )
-                    except Exception as e:
-                        st.error(f"❌ Visualization export failed: {str(e)}")
-        
+                    if st.button("Download Dashboard", help="Download dashboard as HTML file"):
+                        try:
+                            html_content = fig.to_html(include_plotlyjs=True, full_html=True)
+                            st.download_button(
+                                label="Download HTML",
+                                data=html_content,
+                                file_name=f"dashboard_{dashboard_type.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                                mime="text/html"
+                            )
+                        except Exception as e:
+                            st.error(f"Download failed: {str(e)}")
+                
+                # Dashboard insights
+                st.markdown("---")
+                st.markdown("#### Dashboard Insights")
+                
+                if dashboard_type == "Comprehensive Overview":
+                    st.markdown("""
+                    **What This Dashboard Shows:**
+                    - **Top Left**: WCS Distance vs Mean Velocity correlation by epoch
+                    - **Top Right**: Correlation matrix of all key metrics
+                    - **Bottom Left**: Epoch efficiency (distance per second)
+                    - **Bottom Right**: WCS distance distribution patterns
+                    """)
+                elif dashboard_type == "Individual Players":
+                    st.markdown("""
+                    **What This Dashboard Shows:**
+                    - **Left Panels**: Simulated velocity profiles for top performers
+                    - **Right Panels**: Epoch comparison charts for each player
+                    - **Performance Ranking**: Based on average WCS distance
+                    """)
+                else:  # Performance Insights
+                    st.markdown("""
+                    **What This Dashboard Shows:**
+                    - **Top Left**: Player performance ranking by 1-min WCS
+                    - **Top Right**: Velocity vs WCS distance correlation
+                    - **Bottom Left**: Performance consistency analysis
+                    - **Bottom Right**: Epoch duration optimization insights
+                    """)
         except Exception as e:
-            st.error(f"❌ Advanced analytics failed: {str(e)}")
+            st.error(f"Error creating dashboard: {str(e)}")
+            st.info("Try selecting a different dashboard type or check your data")
+
+
+def display_advanced_analytics(all_results: list, output_path: str):
+    """Display advanced analytics for large batch processing (10+ files)"""
+    
+    st.markdown("### Advanced Analytics")
+    st.info("**Advanced Analytics**: Comprehensive group/cohort analysis for large datasets with statistical comparisons, performance distributions, and insights.")
+    
+    # Check if we have enough data for advanced analytics
+    if len(all_results) < 10:
+        st.warning("Advanced analytics require at least 10 files for meaningful cohort analysis")
+        return
+    
+    # Perform cohort analysis
+    with st.spinner("Performing cohort analysis..."):
+        try:
+            cohort_analysis = analyze_cohort_performance(all_results)
+            
+            if cohort_analysis and 'error' not in cohort_analysis:
+                # Display cohort performance summary
+                st.markdown("#### Cohort Performance Summary")
+                
+                # Get statistics from the analysis
+                stats = cohort_analysis.get('statistics', {})
+                overall_stats = stats.get('overall', {})
+                
+                # Key metrics
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric(
+                        "Total Players",
+                        overall_stats.get('total_players', len(all_results)),
+                        help="Number of players in the cohort"
+                    )
+                
+                with col2:
+                    st.metric(
+                        "Avg WCS Distance",
+                        f"{overall_stats.get('mean_distance', 0):.2f} m",
+                        help="Average WCS distance across all players"
+                    )
+                
+                with col3:
+                    st.metric(
+                        "Std Dev WCS",
+                        f"{overall_stats.get('std_distance', 0):.2f} m",
+                        help="Standard deviation of WCS distances"
+                    )
+                
+                with col4:
+                    wcs_range = overall_stats.get('max_distance', 0) - overall_stats.get('min_distance', 0)
+                    st.metric(
+                        "Performance Range",
+                        f"{wcs_range:.2f} m",
+                        help="Range between min and max WCS distances"
+                    )
+                
+                # Performance distribution
+                st.markdown("#### Performance Distribution")
+                
+                visualizations = cohort_analysis.get('visualizations', {})
+                if 'distance_distribution' in visualizations:
+                    st.plotly_chart(visualizations['distance_distribution'], use_container_width=True)
+                elif 'performance_histogram' in visualizations:
+                    st.plotly_chart(visualizations['performance_histogram'], use_container_width=True)
+                
+                # Player ranking
+                st.markdown("#### Player Performance Ranking")
+                
+                rankings = cohort_analysis.get('rankings', {})
+                if 'player_rankings' in rankings:
+                    ranking_df = rankings['player_rankings']
+                    st.dataframe(ranking_df, use_container_width=True)
+                
+                # Statistical analysis
+                st.markdown("#### Statistical Analysis")
+                
+                if 'correlation_heatmap' in visualizations:
+                    st.plotly_chart(visualizations['correlation_heatmap'], use_container_width=True)
+                
+                # Performance insights
+                st.markdown("#### Performance Insights")
+                
+                outliers = cohort_analysis.get('outliers', {})
+                insights = outliers.get('insights', [])
+                if insights:
+                    for insight in insights:
+                        st.info(insight)
+                else:
+                    st.info("No significant outliers or trends detected in this cohort.")
+                
+                # Additional visualizations
+                if 'epoch_comparison' in visualizations:
+                    st.markdown("#### Performance by Epoch Duration")
+                    st.plotly_chart(visualizations['epoch_comparison'], use_container_width=True)
+                
+                if 'player_comparison' in visualizations:
+                    st.markdown("#### Player Performance Comparison")
+                    st.plotly_chart(visualizations['player_comparison'], use_container_width=True)
+                
+                # Export options
+                st.markdown("---")
+                st.markdown("#### Export Cohort Data")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("Export Cohort Data", help="Export cohort analysis data to CSV"):
+                        try:
+                            export_path = export_cohort_analysis(cohort_analysis, output_path)
+                            if 'error' not in export_path:
+                                st.success("Cohort data exported successfully!")
+                                for file_type, file_path in export_path.items():
+                                    st.info(f"📁 {file_type}: {file_path}")
+                            else:
+                                st.error(f"❌ Export failed: {export_path['error']}")
+                        except Exception as e:
+                            st.error(f"Export failed: {str(e)}")
+                
+                with col2:
+                    if st.button("Download Cohort Report", help="Download comprehensive cohort analysis report"):
+                        try:
+                            report_content = create_cohort_report(cohort_analysis)
+                            st.download_button(
+                                label="Download Report",
+                                data=report_content,
+                                file_name=f"cohort_analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                                mime="text/plain"
+                            )
+                        except Exception as e:
+                            st.error(f"Report generation failed: {str(e)}")
+                
+            else:
+                error_msg = cohort_analysis.get('error', 'Unknown error in cohort analysis') if cohort_analysis else 'No cohort analysis data available'
+                st.error(f"❌ Cohort analysis failed: {error_msg}")
+                
+        except Exception as e:
+            st.error(f"❌ Error performing cohort analysis: {str(e)}")
             st.exception(e)
 
 
 def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], include_visualizations: bool = True, enhanced_wcs_viz: bool = True):
-    """Display WCS analysis results"""
+    """Display WCS analysis results for a single file"""
     
-    if not results:
-        st.error("No WCS results to display")
-        return
+    # Summary statistics
+    st.markdown("### Summary Statistics")
     
-    # Display metadata
-    st.markdown("### 📋 File Information")
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Player", metadata.get('player_name', 'Unknown'))
+        st.metric("Total Records", metadata.get('total_records', 0))
+    
     with col2:
-        st.metric("File Type", metadata.get('file_type', 'Unknown'))
+        duration = metadata.get('duration_minutes', 0)
+        st.metric("Duration", f"{duration:.1f} min")
+    
     with col3:
-        st.metric("Records", f"{metadata.get('total_records', 0):,}")
+        if 'wcs_rolling' in results and results['wcs_rolling']:
+            max_rolling = max([epoch['distance'] for epoch in results['wcs_rolling']])
+            st.metric("Max Rolling WCS", f"{max_rolling:.2f} m")
+        else:
+            st.metric("Max Rolling WCS", "N/A")
+    
     with col4:
-        st.metric("Duration", f"{metadata.get('duration_minutes', 0):.1f} min")
+        if 'wcs_contiguous' in results and results['wcs_contiguous']:
+            max_contiguous = max([epoch['distance'] for epoch in results['wcs_contiguous']])
+            st.metric("Max Contiguous WCS", f"{max_contiguous:.2f} m")
+        else:
+            st.metric("Max Contiguous WCS", "N/A")
     
-    # Display summary statistics in a clean table format
-    if 'processed_data' in results:
-        processed_df = results['processed_data']
+    # WCS Analysis Results
+    st.markdown('<h4 class="subsection-header">WCS Analysis Results</h4>', unsafe_allow_html=True)
+    
+    # Rolling WCS Results
+    if 'wcs_rolling' in results and results['wcs_rolling']:
+        st.markdown("#### Rolling WCS Analysis (Accumulated Work)")
         
-        # Prepare velocity statistics
-        velocity_stats = {
-            'max_velocity': processed_df['Velocity'].max(),
-            'mean_velocity': processed_df['Velocity'].mean(),
-            'min_velocity': processed_df['Velocity'].min(),
-            'velocity_std': processed_df['Velocity'].std()
-        }
+        rolling_df = pd.DataFrame(results['wcs_rolling'])
+        rolling_df['epoch_duration'] = rolling_df['epoch_duration'].round(1)
+        rolling_df['distance'] = rolling_df['distance'].round(2)
+        rolling_df['mean_velocity'] = rolling_df['mean_velocity'].round(2)
         
-        # Prepare kinematic statistics
-        kinematic_stats = None
-        if 'kinematic_stats' in results and results['kinematic_stats']:
-            ks = results['kinematic_stats']
-            kinematic_stats = {}
-            
-            if 'acceleration' in ks:
-                kinematic_stats.update({
-                    'max_acceleration': ks['acceleration']['max'],
-                    'min_acceleration': ks['acceleration']['min'],
-                    'mean_acceleration': ks['acceleration']['mean_positive'],  # Mean of positive acceleration only
-                    'mean_deceleration_from_accel': ks['acceleration']['mean_negative'],  # Mean of negative acceleration
-                    'acceleration_events': ks['acceleration']['positive_count'],
-                    'deceleration_events': ks['acceleration']['negative_count']
-                })
-            
-            if 'deceleration' in ks:
-                kinematic_stats.update({
-                    'max_deceleration': ks['deceleration']['max'],
-                    'mean_deceleration': ks['deceleration']['mean'],
-                    'deceleration_events': ks['deceleration']['count']
-                })
-            
-            if 'distance' in ks:
-                kinematic_stats['total_distance'] = ks['distance']['total']
-            
-            if 'power' in ks:
-                kinematic_stats.update({
-                    'max_power': ks['power']['max'],
-                    'mean_power': ks['power']['mean']
-                })
+        st.dataframe(rolling_df[['epoch_duration', 'distance', 'mean_velocity', 'start_time', 'end_time']], 
+                    use_container_width=True, hide_index=True)
+    
+    # Contiguous WCS Results
+    if 'wcs_contiguous' in results and results['wcs_contiguous']:
+        st.markdown("#### Contiguous WCS Analysis (Best Continuous Period)")
         
-        # Prepare WCS summary for both methods
-        wcs_summary = None
-        rolling_wcs_results = results.get('rolling_wcs_results', [])
-        contiguous_wcs_results = results.get('contiguous_wcs_results', [])
+        contiguous_df = pd.DataFrame(results['wcs_contiguous'])
+        contiguous_df['epoch_duration'] = contiguous_df['epoch_duration'].round(1)
+        contiguous_df['distance'] = contiguous_df['distance'].round(2)
+        contiguous_df['mean_velocity'] = contiguous_df['mean_velocity'].round(2)
         
-        if rolling_wcs_results and len(rolling_wcs_results) > 0:
-            epoch_data = rolling_wcs_results[0]  # Use first epoch for summary
-            wcs_summary = {
-                'rolling_th0_distance': epoch_data[0] if len(epoch_data) > 0 else 0,
-                'rolling_th0_duration': epoch_data[1] if len(epoch_data) > 1 else 0,
-                'rolling_th1_distance': epoch_data[4] if len(epoch_data) > 4 else 0,
-                'rolling_th1_duration': epoch_data[5] if len(epoch_data) > 5 else 0
-            }
-            
-            # Add contiguous results if available
-            if contiguous_wcs_results and len(contiguous_wcs_results) > 0:
-                cont_epoch_data = contiguous_wcs_results[0]
-                wcs_summary.update({
-                    'contiguous_th0_distance': cont_epoch_data[0] if len(cont_epoch_data) > 0 else 0,
-                    'contiguous_th0_duration': cont_epoch_data[1] if len(cont_epoch_data) > 1 else 0,
-                    'contiguous_th1_distance': cont_epoch_data[4] if len(cont_epoch_data) > 4 else 0,
-                    'contiguous_th1_duration': cont_epoch_data[5] if len(cont_epoch_data) > 5 else 0
-                })
+        st.dataframe(contiguous_df[['epoch_duration', 'distance', 'mean_velocity', 'start_time', 'end_time']], 
+                    use_container_width=True, hide_index=True)
+    
+    # Visualizations
+    if include_visualizations:
+        st.markdown("### Dual WCS Velocity Analysis (Rolling: Accumulated Work | Contiguous: Best Continuous Period)")
         
-        # Create and display summary table
-        from visualization import create_summary_statistics_table
-        
-        st.markdown("### 📊 Summary Statistics")
-        summary_table = create_summary_statistics_table(velocity_stats, kinematic_stats, wcs_summary)
-        
-        if not summary_table.empty:
-            # Display table with smaller font and better formatting
-            st.dataframe(
-                summary_table,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Category": st.column_config.TextColumn("Category", width="medium"),
-                    "Metric": st.column_config.TextColumn("Metric", width="medium"),
-                    "Value": st.column_config.TextColumn("Value", width="small")
-                }
+        # Create dual WCS velocity visualization
+        if 'velocity_data' in results and results['velocity_data'] is not None:
+            dual_viz = create_dual_wcs_velocity_visualization(
+                results['velocity_data'],
+                results.get('wcs_rolling', []),
+                results.get('wcs_contiguous', []),
+                metadata.get('player_name', 'Unknown')
             )
-        else:
-            st.warning("No summary statistics available")
-    
-    # Display WCS metrics for both methods
-    rolling_wcs_results = results.get('rolling_wcs_results', [])
-    contiguous_wcs_results = results.get('contiguous_wcs_results', [])
-    
-    if rolling_wcs_results or contiguous_wcs_results:
-        st.markdown("### 🔥 WCS Analysis Results")
+            if dual_viz:
+                st.plotly_chart(dual_viz, use_container_width=True)
         
-        # Create WCS results table for both methods
-        wcs_data = []
-        
-        # Get epoch durations from the analysis results or use defaults
-        epoch_durations = results.get('epoch_durations', [0.5, 1.0, 1.5, 2.0, 3.0, 5.0])
-        epoch_names = [f"{dur:.1f}min" for dur in epoch_durations]
-        
-        for i, epoch_name in enumerate(epoch_names):
-            row_data = {'Epoch': epoch_name}
-            
-            # Add rolling results
-            if i < len(rolling_wcs_results):
-                epoch_data = rolling_wcs_results[i]
-                row_data.update({
-                    'Rolling Default Distance (m)': f"{epoch_data[0] if len(epoch_data) > 0 else 0:.1f}",
-                    'Rolling Default Duration (s)': f"{epoch_data[1] if len(epoch_data) > 1 else 0:.1f}",
-                    'Rolling Threshold 1 Distance (m)': f"{epoch_data[4] if len(epoch_data) > 4 else 0:.1f}",
-                    'Rolling Threshold 1 Duration (s)': f"{epoch_data[5] if len(epoch_data) > 5 else 0:.1f}"
-                })
-            else:
-                row_data.update({
-                    'Rolling Default Distance (m)': 'N/A',
-                    'Rolling Default Duration (s)': 'N/A',
-                    'Rolling Threshold 1 Distance (m)': 'N/A',
-                    'Rolling Threshold 1 Duration (s)': 'N/A'
-                })
-            
-            # Add contiguous results
-            if i < len(contiguous_wcs_results):
-                epoch_data = contiguous_wcs_results[i]
-                row_data.update({
-                    'Contiguous Default Distance (m)': f"{epoch_data[0] if len(epoch_data) > 0 else 0:.1f}",
-                    'Contiguous Default Duration (s)': f"{epoch_data[1] if len(epoch_data) > 1 else 0:.1f}",
-                    'Contiguous Threshold 1 Distance (m)': f"{epoch_data[4] if len(epoch_data) > 4 else 0:.1f}",
-                    'Contiguous Threshold 1 Duration (s)': f"{epoch_data[5] if len(epoch_data) > 5 else 0:.1f}"
-                })
-            else:
-                row_data.update({
-                    'Contiguous Default Distance (m)': 'N/A',
-                    'Contiguous Default Duration (s)': 'N/A',
-                    'Contiguous Threshold 1 Distance (m)': 'N/A',
-                    'Contiguous Threshold 1 Duration (s)': 'N/A'
-                })
-            
-            wcs_data.append(row_data)
-        
-        if wcs_data:
-            wcs_df = pd.DataFrame(wcs_data)
-            st.dataframe(
-                wcs_df,
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            st.warning("No WCS results available")
-    
-    # Display visualizations
-    if 'processed_data' in results and include_visualizations:
-        # Import visualization functions
-        from visualization import (create_enhanced_wcs_visualization, create_wcs_period_details, 
-                                 create_kinematic_visualization, create_dual_wcs_velocity_visualization)
-        
-        # Display dual WCS velocity visualization
-        st.markdown("### 🔥 Dual WCS Velocity Analysis (Rolling: Accumulated Work | Contiguous: Best Continuous Period)")
-        dual_wcs_fig = create_dual_wcs_velocity_visualization(
-            results['processed_data'], 
-            metadata, 
-            rolling_wcs_results,
-            contiguous_wcs_results
-        )
-        
-        if dual_wcs_fig:
-            st.plotly_chart(dual_wcs_fig, use_container_width=True)
-        else:
-            st.warning("Could not create dual WCS velocity visualization")
-        
+        # Enhanced WCS visualizations
         if enhanced_wcs_viz:
-            st.markdown("### 🔥 Enhanced WCS Analysis Visualizations")
+            st.markdown("### Enhanced WCS Analysis Visualizations")
             
-            # Create enhanced WCS visualization (using rolling method for display)
-            enhanced_wcs_fig = create_enhanced_wcs_visualization(
-                results['processed_data'], 
-                metadata, 
-                rolling_wcs_results,
-                'rolling'
-            )
+            # Create enhanced WCS visualization
+            if 'velocity_data' in results and results['velocity_data'] is not None:
+                enhanced_viz = create_enhanced_wcs_visualization(
+                    results['velocity_data'],
+                    results.get('wcs_rolling', []),
+                    results.get('wcs_contiguous', []),
+                    metadata.get('player_name', 'Unknown')
+                )
+                if enhanced_viz:
+                    st.plotly_chart(enhanced_viz, use_container_width=True)
             
-            if enhanced_wcs_fig:
-                st.plotly_chart(enhanced_wcs_fig, use_container_width=True)
-            else:
-                st.warning("Could not create enhanced WCS visualization")
-            
-            # Display detailed WCS period information
-            if rolling_wcs_results or contiguous_wcs_results:
-                st.markdown("### 📋 Detailed WCS Period Information")
-                
-                # Get epoch durations from the analysis results
-                epoch_durations = results.get('epoch_durations', [0.5, 1.0, 1.5, 2.0, 3.0, 5.0])
-                
-                # Create detailed tables for both methods
-                if rolling_wcs_results:
-                    st.markdown("#### Rolling WCS Periods (Accumulated Work)")
-                    rolling_details_df = create_wcs_period_details(rolling_wcs_results, epoch_durations, 'rolling')
-                    if not rolling_details_df.empty:
-                        st.dataframe(
-                            rolling_details_df,
-                            use_container_width=True,
-                            hide_index=True
-                        )
-                
-                if contiguous_wcs_results:
-                    st.markdown("#### Contiguous WCS Periods")
-                    contiguous_details_df = create_wcs_period_details(contiguous_wcs_results, epoch_durations, 'contiguous')
-                    if not contiguous_details_df.empty:
-                        st.dataframe(
-                            contiguous_details_df,
-                            use_container_width=True,
-                            hide_index=True
-                        )
-        
-        # Display kinematic visualizations
-        st.markdown("### 📈 Kinematic Analysis Visualizations")
-        
-        # Create kinematic visualization
-        kinematic_fig = create_kinematic_visualization(
-            results['processed_data'], 
-            metadata, 
-            rolling_wcs_results  # Use rolling results for kinematic visualization
-        )
-        
-        if kinematic_fig:
-            st.plotly_chart(kinematic_fig, use_container_width=True)
-        else:
-            st.warning("Could not create kinematic visualization")
-    else:
-        st.markdown("### 📈 Standard Kinematic Analysis Visualizations")
+            # WCS period details
+            if 'wcs_rolling' in results and results['wcs_rolling']:
+                period_viz = create_wcs_period_details(
+                    results['velocity_data'],
+                    results['wcs_rolling'],
+                    metadata.get('player_name', 'Unknown'),
+                    "Rolling WCS Periods"
+                )
+                if period_viz:
+                    st.plotly_chart(period_viz, use_container_width=True)
 
 
 def display_batch_summary(all_results: list):
-    """Display batch processing summary"""
-    st.markdown("### 📊 Batch Processing Summary")
+    """Display a summary of batch processing results"""
     
-    if not all_results:
-        st.warning("No results to display")
-        return
+    st.markdown('<h4 class="subsection-header">Batch Processing Summary</h4>', unsafe_allow_html=True)
     
-    # Create summary table
-    summary_data = []
-    for result in all_results:
-        metadata = result.get('metadata', {})
-        
-        # Handle different result structures
-        if 'results' in result:
-            results_data = result['results']
-            # Get velocity stats - handle both old and new structure
-            if isinstance(results_data, dict):
-                velocity_stats = results_data.get('velocity_stats', {})
-                kinematic_stats = results_data.get('kinematic_stats', {})
-            else:
-                # Fallback for old structure
-                velocity_stats = {}
-                kinematic_stats = {}
+    # Calculate summary statistics
+    total_files = len(all_results)
+    successful_files = len([r for r in all_results if r and 'error' not in r])
+    failed_files = total_files - successful_files
+    
+    # Display summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Files", total_files)
+    
+    with col2:
+        st.metric("Successful", successful_files)
+    
+    with col3:
+        st.metric("Failed", failed_files)
+    
+    with col4:
+        success_rate = (successful_files / total_files * 100) if total_files > 0 else 0
+        st.metric("Success Rate", f"{success_rate:.1f}%")
+    
+    # Display file details
+    st.markdown("#### File Details")
+    
+    file_details = []
+    for i, result in enumerate(all_results, 1):
+        if result and 'error' not in result:
+            metadata = result.get('metadata', {})
+            file_details.append({
+                'File': i,
+                'Player': metadata.get('player_name', 'Unknown'),
+                'Type': metadata.get('file_type', 'Unknown'),
+                'Records': metadata.get('total_records', 0),
+                'Duration (min)': f"{metadata.get('duration_minutes', 0):.1f}",
+                'Status': 'Success'
+            })
         else:
-            # Direct structure
-            velocity_stats = result.get('velocity_stats', {})
-            kinematic_stats = result.get('kinematic_stats', {})
-        
-        # Handle both file path types
-        file_path = result.get('file_path', 'Unknown')
-        if isinstance(file_path, str):
-            file_name = os.path.basename(file_path)
-        else:
-            file_name = getattr(file_path, 'name', 'Unknown')
-        
-        # Get kinematic stats for distance
-        distance_info = kinematic_stats.get('distance', {}) if isinstance(kinematic_stats, dict) else {}
-        total_distance = distance_info.get('total', 0) if distance_info else 0
-        
-        # Get additional player information
-        position = metadata.get('position', 'Unknown')
-        competition = metadata.get('competition', 'Unknown')
-        matchday = metadata.get('matchday', 'Unknown')
-        
-        summary_data.append({
-            'File': file_name,
-            'Player': metadata.get('player_name', 'Unknown'),
-            'Position': position,
-            'Competition': competition,
-            'Match Day': matchday,
-            'Records': metadata.get('total_records', 0),
-            'Duration (min)': round(metadata.get('duration_minutes', 0), 1),
-            'Mean Velocity (m/s)': round(velocity_stats.get('mean', 0), 2),
-            'Max Velocity (m/s)': round(velocity_stats.get('max', 0), 2),
-            'Total Distance (m)': round(total_distance, 1)
-        })
+            file_details.append({
+                'File': i,
+                'Player': 'Unknown',
+                'Type': 'Unknown',
+                'Records': 0,
+                'Duration (min)': '0.0',
+                'Status': 'Failed'
+            })
     
-    if summary_data:
-        summary_df = pd.DataFrame(summary_data)
-        st.dataframe(summary_df, use_container_width=True)
-        
-        # Summary statistics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total Files", len(summary_data))
-        with col2:
-            total_records = sum(row['Records'] for row in summary_data)
-            st.metric("Total Records", f"{total_records:,}")
-        with col3:
-            total_duration = sum(row['Duration (min)'] for row in summary_data)
-            st.metric("Total Duration", f"{total_duration:.1f} min")
-    else:
-        st.warning("No results to display")
+    if file_details:
+        df = pd.DataFrame(file_details)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    
+    # Display any errors
+    if failed_files > 0:
+        st.markdown("#### Processing Errors")
+        for i, result in enumerate(all_results):
+            if result and 'error' in result:
+                st.error(f"File {i+1}: {result['error']}")
 
 
 if __name__ == "__main__":
