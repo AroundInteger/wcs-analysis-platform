@@ -591,7 +591,67 @@ def main():
             th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1, help="Used for contiguous WCS analysis only. Rolling WCS uses all velocities (no thresholding).")
     
     with col4:
-        with st.expander("Analysis Options", expanded=True):
+        with st.expander("🔍 Advanced Thresholding", expanded=True):
+            st.markdown("**Data Filtering Options**")
+            
+            # Enable thresholding
+            enable_thresholding = st.checkbox(
+                "Enable Advanced Thresholding", 
+                value=False, 
+                help="Apply velocity or acceleration thresholds to filter data before WCS calculation"
+            )
+            
+            if enable_thresholding:
+                # Threshold type selection
+                threshold_type = st.selectbox(
+                    "Threshold Type",
+                    ["Velocity", "Acceleration"],
+                    help="Choose which parameter to threshold on"
+                )
+                
+                if threshold_type == "Velocity":
+                    velocity_threshold = st.number_input(
+                        "Velocity Threshold (m/s)",
+                        min_value=0.0,
+                        max_value=20.0,
+                        value=5.0,
+                        step=0.1,
+                        help="V > threshold: retain data, V ≤ threshold: set to zero"
+                    )
+                    st.info(f"**Effect**: Only velocities > {velocity_threshold} m/s will contribute to WCS")
+                    
+                elif threshold_type == "Acceleration":
+                    acceleration_threshold = st.number_input(
+                        "Acceleration Threshold (m/s²)",
+                        min_value=0.0,
+                        max_value=5.0,
+                        value=0.5,
+                        step=0.1,
+                        help="|a| > threshold: retain data, |a| ≤ threshold: set to zero"
+                    )
+                    st.info(f"**Effect**: Only accelerations |a| > {acceleration_threshold} m/s² will contribute to WCS")
+                
+                # Show thresholding explanation
+                with st.expander("ℹ️ How Thresholding Works"):
+                    st.markdown("""
+                    **Thresholding Process**:
+                    1. **Original Data**: V[0:N-1], a[0:N-1] (N data points)
+                    2. **Apply Threshold**: Where condition is TRUE, retain values; where FALSE, set to zero
+                    3. **WCS Calculation**: Use modified dataset for both rolling and contiguous methods
+                    
+                    **Example**: V > 5 m/s threshold
+                    - Original: [2, 3, 8, 7, 4, 1, 6, 9, 5, 2] m/s
+                    - Modified: [0, 0, 8, 7, 0, 0, 6, 9, 0, 0] m/s
+                    - Effect: Only high-velocity periods contribute to WCS
+                    """)
+            else:
+                velocity_threshold = None
+                acceleration_threshold = None
+                threshold_type = None
+    
+    # Analysis Options in a separate section
+    st.markdown("---")
+    with st.expander("🔧 Analysis Options", expanded=True):
             # Note: WCS Analysis now calculates both rolling and contiguous methods automatically
             st.info("🔄 **Dual WCS Analysis**: Both rolling (accumulated work) and contiguous (best continuous period) methods are calculated automatically")
             
@@ -701,6 +761,17 @@ def main():
                             'th1_min': th1_min,
                             'th1_max': th1_max,
                         }
+                        
+                        # Add thresholding parameters if enabled
+                        if enable_thresholding:
+                            parameters['enable_thresholding'] = True
+                            parameters['threshold_type'] = threshold_type
+                            if threshold_type == "Velocity":
+                                parameters['velocity_threshold'] = velocity_threshold
+                            elif threshold_type == "Acceleration":
+                                parameters['acceleration_threshold'] = acceleration_threshold
+                        else:
+                            parameters['enable_thresholding'] = False
                         
                         # Perform WCS analysis
                         results = perform_wcs_analysis(
@@ -1510,6 +1581,33 @@ def display_wcs_results(results: Dict[str, Any], metadata: Dict[str, Any], inclu
             st.metric("Max Contiguous WCS", f"{max_contiguous:.2f} m")
         else:
             st.metric("Max Contiguous WCS", "N/A")
+    
+    # Thresholding Information
+    if 'thresholding_info' in results and results['thresholding_info']['enabled']:
+        st.markdown("### 🔍 Thresholding Information")
+        
+        threshold_info = results['thresholding_info']
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Threshold Type", threshold_info['type'])
+        
+        with col2:
+            threshold_value = threshold_info['threshold_value']
+            if threshold_info['type'] == "Velocity":
+                st.metric("Velocity Threshold", f"{threshold_value} m/s")
+            else:
+                st.metric("Acceleration Threshold", f"{threshold_value} m/s²")
+        
+        with col3:
+            data_reduction = threshold_info['data_reduction_percent']
+            st.metric("Data Reduction", f"{data_reduction:.1f}%")
+        
+        # Thresholding explanation
+        if threshold_info['type'] == "Velocity":
+            st.info(f"📊 **Velocity Thresholding Applied**: Only velocities > {threshold_value} m/s contributed to WCS calculation. {data_reduction:.1f}% of data was filtered out.")
+        else:
+            st.info(f"📊 **Acceleration Thresholding Applied**: Only accelerations |a| > {threshold_value} m/s² contributed to WCS calculation. {data_reduction:.1f}% of data was filtered out.")
     
     # WCS Analysis Results
     st.markdown('<h4 class="subsection-header">WCS Analysis Results</h4>', unsafe_allow_html=True)

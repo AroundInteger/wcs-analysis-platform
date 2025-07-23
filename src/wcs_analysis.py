@@ -471,6 +471,27 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         th1_min = parameters.get('th1_min', 5.0)
         th1_max = parameters.get('th1_max', 100.0)
         
+        # Apply thresholding if enabled
+        enable_thresholding = parameters.get('enable_thresholding', False)
+        if enable_thresholding:
+            # Store original velocity data for comparison
+            velocity_data_original = velocity_data.copy()
+            
+            threshold_type = parameters.get('threshold_type')
+            
+            if threshold_type == "Velocity":
+                velocity_threshold = parameters.get('velocity_threshold', 5.0)
+                # Apply velocity thresholding
+                threshold_condition = velocity_data > velocity_threshold
+                velocity_data = np.where(threshold_condition, velocity_data, 0.0)
+                
+            elif threshold_type == "Acceleration":
+                acceleration_threshold = parameters.get('acceleration_threshold', 0.5)
+                # Calculate acceleration and apply thresholding
+                acceleration_data = calculate_acceleration(velocity_data, sampling_rate)
+                threshold_condition = np.abs(acceleration_data) > acceleration_threshold
+                velocity_data = np.where(threshold_condition, velocity_data, 0.0)
+        
         # Log which epoch durations will be analyzed (commented out to avoid UI issues)
         # st.info(f"📊 **Analyzing {len(epoch_durations)} epoch duration(s)**: {epoch_durations} minutes")
         # st.info(f"🔍 **WCS Methods**: Rolling and Contiguous window analysis")
@@ -528,6 +549,19 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
             'metadata': metadata,
             'file_type_info': file_type_info
         }
+        
+        # Add thresholding information to results
+        if enable_thresholding:
+            results['thresholding_info'] = {
+                'enabled': True,
+                'type': threshold_type,
+                'threshold_value': parameters.get('velocity_threshold') if threshold_type == "Velocity" else parameters.get('acceleration_threshold'),
+                'data_reduction_percent': calculate_data_reduction_percent(velocity_data_original, velocity_data) if 'velocity_data_original' in locals() else 0.0
+            }
+        else:
+            results['thresholding_info'] = {
+                'enabled': False
+            }
         
         return results
         
@@ -634,4 +668,29 @@ def validate_parameters(parameters: Dict[str, Any]) -> bool:
         
     except Exception as e:
         # st.error(f"Error validating parameters: {str(e)}")  # Removed to avoid UI issues
-        return False 
+        return False
+
+
+def calculate_data_reduction_percent(original_data: np.ndarray, thresholded_data: np.ndarray) -> float:
+    """
+    Calculate percentage of data reduced by thresholding
+    
+    Args:
+        original_data: Original velocity data array
+        thresholded_data: Thresholded velocity data array
+        
+    Returns:
+        Percentage of data reduction (0-100)
+    """
+    try:
+        original_nonzero = np.sum(original_data > 0)
+        thresholded_nonzero = np.sum(thresholded_data > 0)
+        
+        if original_nonzero == 0:
+            return 0.0
+        
+        reduction_percent = ((original_nonzero - thresholded_nonzero) / original_nonzero) * 100
+        return reduction_percent
+        
+    except Exception as e:
+        return 0.0 
