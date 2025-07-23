@@ -88,12 +88,13 @@ def create_combined_wcs_dataframe(all_results: List[Dict[str, Any]]) -> pd.DataF
     
     for result in all_results:
         metadata = result['metadata']
+        wcs_results = result['results']
         
-        # Get data from the new structure
-        rolling_wcs_results = result.get('rolling_wcs_results', [])
-        contiguous_wcs_results = result.get('contiguous_wcs_results', [])
-        epoch_durations = result.get('epoch_durations', [])
-        velocity_stats = result.get('velocity_stats', {})
+        # Get data from the results structure
+        rolling_wcs_results = wcs_results.get('rolling_wcs_results', [])
+        contiguous_wcs_results = wcs_results.get('contiguous_wcs_results', [])
+        epoch_durations = wcs_results.get('epoch_durations', [])
+        velocity_stats = wcs_results.get('velocity_stats', {})
         
         player_name = metadata.get('player_name', 'Unknown')
         file_name = result.get('file_name', 'Unknown')

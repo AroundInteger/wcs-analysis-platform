@@ -228,7 +228,7 @@ docker run -p 8501:8501 wcs-analysis-platform
 
 #### "Velocity column not found"
 - **Solution**: Check column names in your CSV file
-- **Supported variations**: `  Speed m/s`, ` Speed m/s`, `Speed m/s`, `Speed`, `Velocity`
+- **Supported variations**: `  Speed m/s`, ` Speed m/s`, `Speed m/s`, `Speed`, `Velocity`, `velocity`
 
 #### "File format not detected"
 - **Solution**: Ensure file has proper headers

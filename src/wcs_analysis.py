@@ -317,10 +317,17 @@ def calculate_wcs_period_contiguous(velocity_data: np.ndarray,
         start_index = 0
         end_index = 0
         
-        # Slide window through data to find best contiguous period
-        for i in range(len(velocity_data) - epoch_samples + 1):
-            window_data = velocity_data[i:i + epoch_samples]
-            window_mask = threshold_mask[i:i + epoch_samples]
+        # Find best contiguous period using fixed epoch boundaries
+        # Calculate how many complete epochs fit in the data
+        num_complete_epochs = len(velocity_data) // epoch_samples
+        
+        for epoch_idx in range(num_complete_epochs):
+            # Calculate start and end indices for this epoch
+            start_idx = epoch_idx * epoch_samples
+            end_idx = start_idx + epoch_samples
+            
+            window_data = velocity_data[start_idx:end_idx]
+            window_mask = threshold_mask[start_idx:end_idx]
             
             # Calculate distance for this window (velocity * time)
             # Each sample represents 1/sampling_rate seconds
@@ -334,8 +341,8 @@ def calculate_wcs_period_contiguous(velocity_data: np.ndarray,
             if window_distance > max_distance:
                 max_distance = window_distance
                 max_time = window_time
-                start_index = i
-                end_index = i + epoch_samples
+                start_index = start_idx
+                end_index = end_idx
         
         return max_distance, max_time, start_index, end_index
         
@@ -385,7 +392,7 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
     """
     try:
         # Validate velocity data
-        from file_ingestion import validate_velocity_data
+        from src.file_ingestion import validate_velocity_data
         
         if not validate_velocity_data(df):
             # st.error("Velocity data validation failed")  # Removed to avoid UI issues

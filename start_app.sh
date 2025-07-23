@@ -21,4 +21,5 @@ echo "🌐 The app will open in your browser at: http://localhost:$PORT"
 echo "⏹️  Press Ctrl+C to stop the server"
 
 # Launch Streamlit with the correct Python path
-PYTHONPATH=. streamlit run src/app.py --server.port $PORT 
+# Use conda environment's Python and Streamlit
+PYTHONPATH=. conda run -n wcs-test streamlit run src/app.py --server.port $PORT 
