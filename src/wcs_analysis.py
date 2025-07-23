@@ -481,9 +481,11 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
             
             if threshold_type == "Velocity":
                 velocity_threshold = parameters.get('velocity_threshold', 5.0)
-                # Apply velocity thresholding
-                threshold_condition = velocity_data > velocity_threshold
-                velocity_data = np.where(threshold_condition, velocity_data, 0.0)
+                # Apply velocity thresholding (skip if threshold is 0.0 - no threshold)
+                if velocity_threshold > 0.0:
+                    threshold_condition = velocity_data > velocity_threshold
+                    velocity_data = np.where(threshold_condition, velocity_data, 0.0)
+                # If velocity_threshold is 0.0, no thresholding is applied (all data retained)
                 
             elif threshold_type == "Acceleration":
                 acceleration_threshold = parameters.get('acceleration_threshold', 0.5)
@@ -552,11 +554,19 @@ def perform_wcs_analysis(df: pd.DataFrame, metadata: Dict[str, Any], file_type_i
         
         # Add thresholding information to results
         if enable_thresholding:
+            threshold_value = parameters.get('velocity_threshold') if threshold_type == "Velocity" else parameters.get('acceleration_threshold')
+            
+            # Calculate data reduction (0% if no thresholding applied)
+            if threshold_type == "Velocity" and threshold_value == 0.0:
+                data_reduction = 0.0
+            else:
+                data_reduction = calculate_data_reduction_percent(velocity_data_original, velocity_data) if 'velocity_data_original' in locals() else 0.0
+            
             results['thresholding_info'] = {
                 'enabled': True,
                 'type': threshold_type,
-                'threshold_value': parameters.get('velocity_threshold') if threshold_type == "Velocity" else parameters.get('acceleration_threshold'),
-                'data_reduction_percent': calculate_data_reduction_percent(velocity_data_original, velocity_data) if 'velocity_data_original' in locals() else 0.0
+                'threshold_value': threshold_value,
+                'data_reduction_percent': data_reduction
             }
         else:
             results['thresholding_info'] = {
