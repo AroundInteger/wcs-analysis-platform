@@ -581,16 +581,6 @@ def main():
             st.info(f"**Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
     
     with col3:
-        with st.expander("WCS Algorithm Parameters", expanded=True):
-            # Default threshold is always 0-100 m/s
-            th0_min = 0.0
-            th0_max = 100.0
-            st.info("**WCS Distance Threshold**: 0.0 - 100.0 m/s (all velocities)")
-            
-            th1_min = st.number_input("Contiguous WCS Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1, help="Minimum velocity for contiguous WCS analysis. Rolling WCS uses all velocities.")
-            th1_max = st.number_input("Contiguous WCS Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1, help="Maximum velocity for contiguous WCS analysis. Rolling WCS uses all velocities.")
-    
-    with col4:
         st.markdown("### 🔍 Data Filtering")
         st.markdown("**Filter input data to focus on specific performance zones**")
         
@@ -675,6 +665,21 @@ def main():
         
         # Set enable_thresholding to True by default
         enable_thresholding = True
+    
+    with col4:
+        st.markdown("### 📊 Analysis Options")
+        st.markdown("**Configure WCS calculation parameters**")
+        
+        # Set default WCS algorithm parameters (hidden from user)
+        th0_min = 0.0
+        th0_max = 100.0
+        th1_min = 5.0  # Default for contiguous WCS analysis
+        th1_max = 100.0
+        
+        st.info("**WCS Algorithm**: Uses optimized default parameters for both rolling and contiguous analysis")
+        
+        # Note: WCS Analysis now calculates both rolling and contiguous methods automatically
+        st.info("🔄 **Dual WCS Analysis**: Both rolling (accumulated work) and contiguous (best continuous period) methods are calculated automatically")
     
     # Analysis Options in a separate section
     st.markdown("---")
