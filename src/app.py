@@ -581,107 +581,100 @@ def main():
             st.info(f"**Sampling Rate**: Fixed at {sampling_rate} Hz for all files")
     
     with col3:
-        with st.expander("Threshold Parameters", expanded=True):
+        with st.expander("WCS Algorithm Parameters", expanded=True):
             # Default threshold is always 0-100 m/s
             th0_min = 0.0
             th0_max = 100.0
-            st.info("**Default Threshold**: 0.0 - 100.0 m/s (all velocities)")
+            st.info("**WCS Distance Threshold**: 0.0 - 100.0 m/s (all velocities)")
             
-            th1_min = st.number_input("Threshold 1 Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1, help="Used for contiguous WCS analysis only. Rolling WCS uses all velocities (no thresholding).")
-            th1_max = st.number_input("Threshold 1 Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1, help="Used for contiguous WCS analysis only. Rolling WCS uses all velocities (no thresholding).")
+            th1_min = st.number_input("Contiguous WCS Min Velocity (m/s)", 0.0, 10.0, 5.0, 0.1, help="Minimum velocity for contiguous WCS analysis. Rolling WCS uses all velocities.")
+            th1_max = st.number_input("Contiguous WCS Max Velocity (m/s)", 0.0, 100.0, 100.0, 0.1, help="Maximum velocity for contiguous WCS analysis. Rolling WCS uses all velocities.")
     
     with col4:
-        with st.expander("🔍 Advanced Thresholding", expanded=True):
-            st.markdown("**Data Filtering Options**")
-            
-            # Enable thresholding
-            enable_thresholding = st.checkbox(
-                "Enable Advanced Thresholding", 
-                value=False, 
-                help="Apply predefined thresholds to filter data before WCS calculation"
-            )
-            
-            if enable_thresholding:
-                # Predefined threshold options
-                threshold_options = {
-                    "No Threshold (V > 0)": {"type": "Velocity", "value": 0.0, "description": "All velocities contribute to WCS"},
-                    "High Speed (V > 5.5 m/s)": {"type": "Velocity", "value": 5.5, "description": "Focus on high-speed periods"},
-                    "Sprint (V > 7.0 m/s)": {"type": "Velocity", "value": 7.0, "description": "Focus on sprint/peak performance"},
-                    "Dynamic Movement (|a| > 3.0 m/s²)": {"type": "Acceleration", "value": 3.0, "description": "Focus on high acceleration/deceleration"}
-                }
-                
-                # Threshold selection
-                selected_threshold = st.selectbox(
-                    "Select Threshold Option",
-                    list(threshold_options.keys()),
-                    help="Choose from predefined threshold options optimized for different analysis types"
-                )
-                
-                # Display selected threshold info
-                threshold_info = threshold_options[selected_threshold]
-                threshold_type = threshold_info["type"]
-                threshold_value = threshold_info["value"]
-                
-                # Show threshold effect
-                if threshold_type == "Velocity":
-                    if threshold_value == 0.0:
-                        st.info(f"**Effect**: {threshold_info['description']} - All velocity data will be used")
-                    else:
-                        st.info(f"**Effect**: {threshold_info['description']} - Only velocities > {threshold_value} m/s will contribute to WCS")
-                else:
-                    st.info(f"**Effect**: {threshold_info['description']} - Only accelerations |a| > {threshold_value} m/s² will contribute to WCS")
-                
-                # Decision tree for additional options
-                st.markdown("---")
-                st.markdown("**🔧 Need Custom Threshold?**")
-                
-                if st.checkbox("Use Custom Threshold Value", value=False, help="Override the predefined threshold with a custom value"):
-                    if threshold_type == "Velocity":
-                        custom_value = st.number_input(
-                            "Custom Velocity Threshold (m/s)",
-                            min_value=0.0,
-                            max_value=20.0,
-                            value=threshold_value,
-                            step=0.1,
-                            help="V > threshold: retain data, V ≤ threshold: set to zero"
-                        )
-                        threshold_value = custom_value
-                        st.info(f"**Custom Effect**: Only velocities > {threshold_value} m/s will contribute to WCS")
-                    else:
-                        custom_value = st.number_input(
-                            "Custom Acceleration Threshold (m/s²)",
-                            min_value=0.0,
-                            max_value=10.0,
-                            value=threshold_value,
-                            step=0.1,
-                            help="|a| > threshold: retain data, |a| ≤ threshold: set to zero"
-                        )
-                        threshold_value = custom_value
-                        st.info(f"**Custom Effect**: Only accelerations |a| > {threshold_value} m/s² will contribute to WCS")
-                
-                # Show thresholding explanation
-                with st.expander("ℹ️ How Thresholding Works"):
-                    st.markdown("""
-                    **Thresholding Process**:
-                    1. **Original Data**: V[0:N-1], a[0:N-1] (N data points)
-                    2. **Apply Threshold**: Where condition is TRUE, retain values; where FALSE, set to zero
-                    3. **WCS Calculation**: Use modified dataset for both rolling and contiguous methods
-                    
-                    **Predefined Options**:
-                    - **No Threshold**: All data contributes (baseline analysis)
-                    - **High Speed (V > 5.5 m/s)**: Focus on moderate-high intensity periods
-                    - **Sprint (V > 7.0 m/s)**: Focus on peak performance periods
-                    - **Dynamic Movement (|a| > 3.0 m/s²)**: Focus on acceleration/deceleration events
-                    
-                    **Example**: V > 5.5 m/s threshold
-                    - Original: [2, 3, 8, 7, 4, 1, 6, 9, 5, 2] m/s
-                    - Modified: [0, 0, 8, 7, 0, 0, 6, 9, 0, 0] m/s
-                    - Effect: Only high-velocity periods contribute to WCS
-                    """)
+        st.markdown("### 🔍 Data Filtering")
+        st.markdown("**Filter input data to focus on specific performance zones**")
+        
+        # Predefined threshold options
+        threshold_options = {
+            "No Threshold (V > 0)": {"type": "Velocity", "value": 0.0, "description": "All velocities contribute to WCS"},
+            "High Speed (V > 5.5 m/s)": {"type": "Velocity", "value": 5.5, "description": "Focus on high-speed periods"},
+            "Sprint (V > 7.0 m/s)": {"type": "Velocity", "value": 7.0, "description": "Focus on sprint/peak performance"},
+            "Dynamic Movement (|a| > 3.0 m/s²)": {"type": "Acceleration", "value": 3.0, "description": "Focus on high acceleration/deceleration"}
+        }
+        
+        # Threshold selection
+        selected_threshold = st.selectbox(
+            "Select Threshold Option",
+            list(threshold_options.keys()),
+            help="Choose from predefined threshold options optimized for different analysis types"
+        )
+        
+        # Display selected threshold info
+        threshold_info = threshold_options[selected_threshold]
+        threshold_type = threshold_info["type"]
+        threshold_value = threshold_info["value"]
+        
+        # Show threshold effect
+        if threshold_type == "Velocity":
+            if threshold_value == 0.0:
+                st.info(f"**Effect**: {threshold_info['description']} - All velocity data will be used")
             else:
-                velocity_threshold = None
-                acceleration_threshold = None
-                threshold_type = None
+                st.info(f"**Effect**: {threshold_info['description']} - Only velocities > {threshold_value} m/s will contribute to WCS")
+        else:
+            st.info(f"**Effect**: {threshold_info['description']} - Only accelerations |a| > {threshold_value} m/s² will contribute to WCS")
+        
+        # Custom threshold override
+        st.markdown("---")
+        st.markdown("**🔧 Custom Threshold Value**")
+        
+        use_custom = st.checkbox("Override with custom value", value=False, help="Use a custom threshold instead of the predefined option")
+        
+        if use_custom:
+            if threshold_type == "Velocity":
+                custom_value = st.number_input(
+                    "Custom Velocity Threshold (m/s)",
+                    min_value=0.0,
+                    max_value=20.0,
+                    value=threshold_value,
+                    step=0.1,
+                    help="V > threshold: retain data, V ≤ threshold: set to zero"
+                )
+                threshold_value = custom_value
+                st.info(f"**Custom Effect**: Only velocities > {threshold_value} m/s will contribute to WCS")
+            else:
+                custom_value = st.number_input(
+                    "Custom Acceleration Threshold (m/s²)",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=threshold_value,
+                    step=0.1,
+                    help="|a| > threshold: retain data, |a| ≤ threshold: set to zero"
+                )
+                threshold_value = custom_value
+                st.info(f"**Custom Effect**: Only accelerations |a| > {threshold_value} m/s² will contribute to WCS")
+        
+        # Show thresholding explanation
+        with st.expander("ℹ️ How Thresholding Works"):
+            st.markdown("""
+            **Thresholding Process**:
+            1. **Original Data**: V[0:N-1], a[0:N-1] (N data points)
+            2. **Apply Threshold**: Where condition is TRUE, retain values; where FALSE, set to zero
+            3. **WCS Calculation**: Use modified dataset for both rolling and contiguous methods
+            
+            **Predefined Options**:
+            - **No Threshold**: All data contributes (baseline analysis)
+            - **High Speed (V > 5.5 m/s)**: Focus on moderate-high intensity periods
+            - **Sprint (V > 7.0 m/s)**: Focus on peak performance periods
+            - **Dynamic Movement (|a| > 3.0 m/s²)**: Focus on acceleration/deceleration events
+            
+            **Example**: V > 5.5 m/s threshold
+            - Original: [2, 3, 8, 7, 4, 1, 6, 9, 5, 2] m/s
+            - Modified: [0, 0, 8, 7, 0, 0, 6, 9, 0, 0] m/s
+            - Effect: Only high-velocity periods contribute to WCS
+            """)
+        
+        # Set enable_thresholding to True by default
+        enable_thresholding = True
     
     # Analysis Options in a separate section
     st.markdown("---")
