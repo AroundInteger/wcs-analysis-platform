@@ -200,17 +200,24 @@ def main():
     h3 {
         font-size: 1.4rem;
         font-weight: 600;
-        color: var(--text-primary);
+        color: #1e293b !important;
         margin-bottom: 0.75rem;
-        border-bottom: 2px solid var(--primary-color);
+        border-bottom: 2px solid #2563eb;
         padding-bottom: 0.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
     }
     
     h4 {
         font-size: 1.2rem;
         font-weight: 500;
-        color: var(--text-primary);
+        color: #1e293b !important;
         margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+        border-bottom: 1px solid #cbd5e1;
     }
     
     /* Custom subtitle styling for better visibility */
@@ -227,27 +234,31 @@ def main():
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
     
-    /* Enhanced section headers */
+    /* Enhanced section headers - improved contrast */
     .section-header {
         font-size: 1.5rem;
         font-weight: 700;
-        color: #1e40af !important;
+        color: #1e293b !important;
         margin-bottom: 1rem;
         padding: 0.75rem 1rem;
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         border-radius: 8px;
         border-left: 4px solid #2563eb;
+        border-bottom: 2px solid #cbd5e1;
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
     
-    /* Subsection headers */
+    /* Subsection headers - improved contrast */
     .subsection-header {
         font-size: 1.2rem;
         font-weight: 600;
-        color: #374151 !important;
+        color: #1e293b !important;
         margin-bottom: 0.75rem;
         padding: 0.5rem 0;
-        border-bottom: 2px solid #e5e7eb;
+        border-bottom: 2px solid #cbd5e1;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
         text-shadow: 0 1px 1px rgba(0,0,0,0.05);
     }
     
@@ -469,6 +480,56 @@ def main():
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-color);
         color: white;
+    }
+    
+    /* Improve text contrast for dim elements while preserving header styling */
+    .stMarkdown p:not(.main-header):not(.subtitle-header):not(.section-header):not(.subsection-header),
+    .stMarkdown div:not(.main-header):not(.subtitle-header):not(.section-header):not(.subsection-header),
+    .stMarkdown span:not(.main-header):not(.subtitle-header):not(.section-header):not(.subsection-header) {
+        color: #1e293b !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Improve sidebar and help text contrast */
+    .stRadio > label,
+    .stRadio > label *,
+    .stCheckbox > label,
+    .stCheckbox > label *,
+    .stSelectbox > label,
+    .stSelectbox > label *,
+    .stNumberInput > label,
+    .stNumberInput > label *,
+    .stTextInput > label,
+    .stTextInput > label * {
+        color: #1e293b !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Improve info/warning/error box text */
+    .stAlert,
+    .stAlert *,
+    .stWarning,
+    .stWarning *,
+    .stError,
+    .stError *,
+    .stSuccess,
+    .stSuccess * {
+        color: #1e293b !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Override only dim/light gray text specifically */
+    div[style*="color: #6b7280"],
+    div[style*="color: #9ca3af"],
+    div[style*="color: #d1d5db"],
+    span[style*="color: #6b7280"],
+    span[style*="color: #9ca3af"],
+    span[style*="color: #d1d5db"],
+    p[style*="color: #6b7280"],
+    p[style*="color: #9ca3af"],
+    p[style*="color: #d1d5db"] {
+        color: #1e293b !important;
+        font-weight: 500 !important;
     }
     </style>
     """, unsafe_allow_html=True)
