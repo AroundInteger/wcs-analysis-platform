@@ -17,7 +17,7 @@ def read_requirements():
 
 setup(
     name="wcs-analysis-platform",
-    version="1.0.0",
+    version="1.5.0",
     author="WCS Analysis Team",
     author_email="support@wcs-analysis.com",
     description="A professional Streamlit application for Worst Case Scenario analysis of GPS data",

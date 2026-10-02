@@ -184,7 +184,7 @@ def main():
     with col4:
         with st.expander("📊 Analysis Options", expanded=True):
             # Note: WCS Analysis now calculates both rolling and contiguous methods automatically
-            st.info("🔄 **Dual WCS Analysis**: Both rolling (accumulated work) and contiguous (best continuous period) methods are calculated automatically")
+            st.info("🔄 **Dual WCS Analysis**: Rolling WCS is a centred movsum that shrinks at both ends. Contiguous WCS is the best full-length period.")
             
             batch_mode = st.checkbox("Batch Processing Mode", value=False, help="Enable for multiple files - shows combined analysis and exports only")
             

@@ -80,7 +80,7 @@ jobs:
         velocity_data = np.random.normal(5.0, 1.0, 6000)
         
         start_time = time.time()
-        result = calculate_wcs_period_rolling(velocity_data, time_data, 30.0, 0.0, 100.0)
+        result = calculate_wcs_period_rolling(velocity_data, 0.5, 10, 0.0, 100.0)
         end_time = time.time()
         
         processing_time = end_time - start_time

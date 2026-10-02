@@ -204,79 +204,85 @@ def process_velocity_data(df: pd.DataFrame, sampling_rate: int = 10) -> pd.DataF
         return df
 
 
-def calculate_wcs_period_rolling(velocity_data: np.ndarray, 
-                                epoch_duration: float, 
+def _matlab_round(value: float) -> int:
+    """Round half away from zero, matching MATLAB round for a positive value."""
+    return int(np.floor(float(value) + 0.5))
+
+
+def _movsum_offsets(window_length: int) -> Tuple[int, int]:
+    """Samples before and after the current one for movsum(A, k).
+
+    An odd k is centred on the current sample. An even k is centred on the
+    current sample and the previous one.
+    """
+    k = max(int(window_length), 1)
+    if k % 2:
+        half = k // 2
+        return half, half
+    return k // 2, k // 2 - 1
+
+
+def movsum_shrink(values: np.ndarray, window_length: int) -> np.ndarray:
+    """movsum(A, k) with Endpoints "shrink", the MATLAB default.
+
+    Near either end the window includes only samples that exist.
+    """
+    values = np.asarray(values, dtype=float)
+    n = values.size
+    if n == 0:
+        return np.empty(0, dtype=float)
+
+    before, after = _movsum_offsets(window_length)
+    cumulative = np.empty(n + 1, dtype=float)
+    cumulative[0] = 0.0
+    np.cumsum(values, out=cumulative[1:])
+
+    centres = np.arange(n)
+    left = np.maximum(0, centres - before)
+    right = np.minimum(n, centres + after + 1)
+    return cumulative[right] - cumulative[left]
+
+
+def calculate_wcs_period_rolling(velocity_data: np.ndarray,
+                                epoch_duration: float,
                                 sampling_rate: int = 10,
                                 threshold_min: float = 0.0,
                                 threshold_max: float = 100.0) -> Tuple[float, float, int, int]:
     """
-    Calculate WCS period using rolling window approach with central point focus
-    
-    This method uses the central point of each window as the focal point,
-    and calculates the maximum accumulated work (area under the curve) over the specified time period.
-    
-    IMPORTANT: Rolling WCS applies thresholding to only include velocity data points
-    that are within the threshold range (>= threshold_min and <= threshold_max).
-    
-    Args:
-        velocity_data: Array of velocity values
-        epoch_duration: Duration of epoch in minutes
-        sampling_rate: Sampling rate in Hz
-        threshold_min: Minimum velocity threshold
-        threshold_max: Maximum velocity threshold
-        
+    Centred movsum with Endpoints "shrink".
+
+    This is the accepted product window: scalar movsum(A, k) from MATLAB
+    R2025b. An even epoch is centred on the current sample and the previous
+    one. Both ends use only samples that exist. Ties use ceil(mean(index)).
+    In-threshold velocity contributes to the distance.
+
     Returns:
-        Tuple of (max_distance, max_time, start_index, end_index)
+        Tuple of (max_distance, max_time, start_index, end_index).
+        end_index is exclusive.
     """
-    try:
-        # Convert epoch duration to samples
-        epoch_samples = int(epoch_duration * 60 * sampling_rate)
-        
-        if len(velocity_data) < epoch_samples:
-            # If data is shorter than epoch, use all available data
-            epoch_samples = len(velocity_data)
-        
-        # Calculate cumulative distance for each window
-        max_distance = 0
-        max_time = 0
-        start_index = 0
-        end_index = 0
-        
-        # Calculate half-window size for central point focus
-        half_window = epoch_samples // 2
-        
-        # Slide window through data with central point focus
-        for i in range(half_window, len(velocity_data) - half_window):
-            # Window is centered on point i
-            window_start = i - half_window
-            window_end = i + half_window + (1 if epoch_samples % 2 == 1 else 0)  # Handle odd window sizes
-            
-            window_data = velocity_data[window_start:window_end]
-            
-            # Apply velocity threshold - only include data points within threshold range
-            threshold_mask = (window_data >= threshold_min) & (window_data <= threshold_max)
-            window_data_thresholded = window_data[threshold_mask]
-            
-            # Calculate distance for this window (velocity * time)
-            # Each sample represents 1/sampling_rate seconds
-            time_per_sample = 1.0 / sampling_rate
-            window_distance = np.sum(window_data_thresholded * time_per_sample)
-            
-            # Calculate time within threshold
-            window_time = len(window_data_thresholded) * time_per_sample
-            
-            # Update maximum if this window has higher distance AND has data within threshold
-            if window_distance > max_distance and len(window_data_thresholded) > 0:
-                max_distance = window_distance
-                max_time = window_time
-                start_index = window_start
-                end_index = window_end
-        
-        return max_distance, max_time, start_index, end_index
-        
-    except Exception as e:
-        st.error(f"Error calculating WCS period (rolling): {str(e)}")
+    velocity = np.asarray(velocity_data, dtype=float)
+    n = int(velocity.size)
+    if n == 0 or sampling_rate <= 0:
         return 0.0, 0.0, 0, 0
+
+    epoch_samples = max(_matlab_round(epoch_duration * 60 * sampling_rate), 1)
+    before, after = _movsum_offsets(epoch_samples)
+
+    in_threshold = (velocity >= threshold_min) & (velocity <= threshold_max)
+    masked_velocity = np.where(in_threshold, velocity, 0.0)
+    window_sums = movsum_shrink(masked_velocity, epoch_samples)
+
+    centres = np.flatnonzero(window_sums == window_sums.max())
+    centre = int(np.ceil(np.mean(centres)))
+
+    start_index = max(0, centre - before)
+    end_index = min(n, centre + after + 1)
+
+    sample_period = 1.0 / sampling_rate
+    window_mask = in_threshold[start_index:end_index]
+    max_distance = float(np.sum(masked_velocity[start_index:end_index]) * sample_period)
+    max_time = float(np.sum(window_mask) * sample_period)
+    return max_distance, max_time, start_index, end_index
 
 
 def calculate_wcs_period_contiguous(velocity_data: np.ndarray, 
