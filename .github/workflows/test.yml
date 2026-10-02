@@ -19,7 +19,13 @@ jobs:
       - name: Centred movsum tests
         run: python -m pytest tests/test_wcs_centered_window.py -q --tb=short
       - name: Import the Streamlit entry point
-        run: python -c "import runpy; runpy.run_path('src/app.py', run_name='__not_main__')"
+        run: |
+          python -c "
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('src').resolve()))
+          import app
+          "
       - name: Window performance
         run: |
           python -c "
